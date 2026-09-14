@@ -1,0 +1,6 @@
+{
+  "name": "Aatmavishwas",
+  "description": "AI-assisted communication training platform to build confidence, practice speeches, interviews, group discussions, and presentations with real-time feedback.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
