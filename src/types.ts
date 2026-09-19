@@ -19,6 +19,29 @@ export interface VocabularyUpgrade {
   explanation: string;
 }
 
+export interface SlideFeedbackItem {
+  slideNumber: number;
+  slideTitle: string;
+  status: 'Strong' | 'Needs Work' | 'Rushed' | 'Overtime';
+  feedback: string;
+}
+
+export interface BridgePhraseItem {
+  fromSlide: string;
+  toSlide: string;
+  suggestedPhrase: string;
+}
+
+export interface PresentationReview {
+  slideCoverageScore: number;
+  visualNarrativeAlignment: string;
+  timeAllocationCritique: string;
+  shortcomings: string[];
+  presentationImprovements: string[];
+  slideBySlideFeedback: SlideFeedbackItem[];
+  bridgePhraseSuggestions: BridgePhraseItem[];
+}
+
 export interface FeedbackReport {
   id: string;
   timestamp: string;
@@ -51,6 +74,7 @@ export interface FeedbackReport {
     score: number;
   };
   sampleImprovedResponse?: string;
+  presentationReview?: PresentationReview;
 }
 
 export interface InterviewQuestion {
@@ -107,6 +131,8 @@ export interface PresentationDeck {
   description: string;
   totalSlides: number;
   slides: PresentationSlide[];
+  isUploaded?: boolean;
+  fileName?: string;
 }
 
 export interface SpeechPrompt {

@@ -14,7 +14,10 @@ import {
   CheckCircle2,
   Lightbulb,
   Maximize2,
-  Shuffle
+  Shuffle,
+  X,
+  FileUp,
+  AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { PRESENTATION_DECKS } from '../data/mockData';
@@ -27,6 +30,7 @@ interface PresentationPracticeProps {
 }
 
 export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSessionComplete }) => {
+  const [decks, setDecks] = useState<PresentationDeck[]>(PRESENTATION_DECKS);
   const [selectedDeck, setSelectedDeck] = useState<PresentationDeck>(PRESENTATION_DECKS[0]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
@@ -41,6 +45,16 @@ export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSe
   const [audioMimeType, setAudioMimeType] = useState<string>('audio/webm');
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
+
+  // Upload presentation modal state
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadTab, setUploadTab] = useState<'file' | 'text'>('file');
+  const [isParsingDeck, setIsParsingDeck] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [outlineText, setOutlineText] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const recorderRef = useRef<AudioRecorderController | null>(null);
   const recognizerRef = useRef<any>(null);
@@ -65,12 +79,133 @@ export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSe
     if (isRecording) {
       handleStopRehearsal();
     }
-    const others = PRESENTATION_DECKS.filter(d => d.id !== selectedDeck.id);
+    const others = decks.filter(d => d.id !== selectedDeck.id);
     if (others.length > 0) {
       const picked = others[Math.floor(Math.random() * others.length)];
       setSelectedDeck(picked);
       setStatusNotice(`Switched to deck: "${picked.title}"`);
     }
+  };
+
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelected(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelected = (file: File) => {
+    setUploadError(null);
+    setSelectedFile(file);
+  };
+
+  const handleParseAndLoadDeck = async () => {
+    setUploadError(null);
+
+    if (uploadTab === 'file' && !selectedFile) {
+      setUploadError('Please select a presentation file (PDF, TXT, MD, PPTX) to upload.');
+      return;
+    }
+
+    if (uploadTab === 'text' && !outlineText.trim()) {
+      setUploadError('Please paste your presentation slide notes or outline.');
+      return;
+    }
+
+    setIsParsingDeck(true);
+
+    try {
+      let payload: any = {};
+
+      if (uploadTab === 'file' && selectedFile) {
+        const isPdf = selectedFile.name.toLowerCase().endsWith('.pdf') || selectedFile.type.includes('pdf');
+        
+        if (isPdf) {
+          const arrayBuffer = await selectedFile.arrayBuffer();
+          const base64 = btoa(
+            new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+          );
+          payload = {
+            fileName: selectedFile.name,
+            mimeType: selectedFile.type || 'application/pdf',
+            fileBase64: base64,
+          };
+        } else {
+          // Read as text
+          const text = await selectedFile.text();
+          payload = {
+            fileName: selectedFile.name,
+            mimeType: selectedFile.type || 'text/plain',
+            textContent: text,
+          };
+        }
+      } else {
+        payload = {
+          fileName: 'Custom Presentation Outline',
+          mimeType: 'text/plain',
+          textContent: outlineText.trim(),
+        };
+      }
+
+      const res = await fetch('/api/parse-presentation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to parse presentation. Please verify the file content.');
+      }
+
+      const data = await res.json();
+      if (data.deck && Array.isArray(data.deck.slides) && data.deck.slides.length > 0) {
+        const newDeck: PresentationDeck = data.deck;
+        setDecks((prev) => [newDeck, ...prev]);
+        setSelectedDeck(newDeck);
+        setCurrentSlideIndex(0);
+        setIsUploadModalOpen(false);
+        setSelectedFile(null);
+        setOutlineText('');
+        setStatusNotice(`Loaded presentation "${newDeck.title}" (${newDeck.slides.length} slides). Ready for rehearsal!`);
+        
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.6 }
+        });
+      } else {
+        throw new Error('No slides could be identified in the uploaded presentation.');
+      }
+    } catch (err: any) {
+      console.error('Error parsing presentation deck:', err);
+      setUploadError(err?.message || 'Failed to process presentation file. Try pasting the outline text directly.');
+    } finally {
+      setIsParsingDeck(false);
+    }
+  };
+
+  const handleInsertSampleOutline = () => {
+    setOutlineText(`# Slide 1: Transforming AI Voice Coaching
+- Problem: 78% of professionals experience speaking anxiety during high-stakes presentations
+- Existing tools give generic scores without slide-by-slide rehearsal feedback
+- Our vision: A real-time executive pitch companion
+
+# Slide 2: The Core Product Architecture
+- Voice telemetry streaming on port 3000
+- Slide coverage and visual-spoken narrative alignment
+- Actionable delivery drills and transition phrase bridges
+
+# Slide 3: Growth Metrics & Milestones
+- 120,000 active rehearsals logged across pilot teams
+- 42% decrease in filler word recurrence within 3 sessions
+- Enterprise pilot commitments with 8 Fortune 500 sales teams
+
+# Slide 4: Strategic Ask & Next Steps
+- $3M Seed funding to accelerate real-time multimodal feedback
+- Expanding multi-language phonetics and video posture analysis
+- Contact: founders@aatmavishwas.ai`);
   };
 
   const handleStartRehearsal = async () => {
@@ -213,6 +348,14 @@ export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSe
           durationSeconds: Math.max(15, totalRehearsalTime),
           sessionType: 'presentation',
           title: `Rehearsal: ${selectedDeck.title}`,
+          deckTitle: selectedDeck.title,
+          slides: selectedDeck.slides,
+          slideTimings: selectedDeck.slides.map((s, i) => ({
+            slideNumber: s.slideNumber || (i + 1),
+            slideTitle: s.title,
+            secondsSpent: slideTimers[i] || 0,
+            targetDurationSeconds: s.targetDurationSeconds || 45,
+          })),
           questionContext: `Presentation Slides Timing: ${slideTimingBreakdown}`,
         }),
       });
@@ -271,14 +414,28 @@ export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSe
           </p>
         </div>
 
-        <button
-          id="load-sample-pitch-btn"
-          onClick={handleLoadSamplePresentationSpeech}
-          className="px-3.5 py-2 text-xs font-semibold text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-xl transition flex items-center gap-2 self-start sm:self-center"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>Load Sample Pitch Walkthrough</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-center">
+          <button
+            id="open-upload-presentation-btn"
+            onClick={() => {
+              setIsUploadModalOpen(true);
+              setUploadError(null);
+            }}
+            className="px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 rounded-xl shadow-lg shadow-purple-600/30 transition flex items-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Upload Presentation</span>
+          </button>
+
+          <button
+            id="load-sample-pitch-btn"
+            onClick={handleLoadSamplePresentationSpeech}
+            className="px-3.5 py-2 text-xs font-semibold text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-xl transition flex items-center gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Load Sample Pitch</span>
+          </button>
+        </div>
       </div>
 
       {/* Deck Selector & Presentation Stage */}
@@ -286,12 +443,30 @@ export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSe
         <div className="flex items-center gap-3">
           <Layers className="w-5 h-5 text-purple-400" />
           <div>
-            <h3 className="text-sm font-bold text-white">{selectedDeck.title}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white">{selectedDeck.title}</h3>
+              {selectedDeck.isUploaded && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  Custom Upload
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-400">{selectedDeck.description}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <button
+            id="quick-upload-deck-btn"
+            onClick={() => {
+              setIsUploadModalOpen(true);
+              setUploadError(null);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:text-white bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 rounded-xl transition"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>Upload Deck</span>
+          </button>
           <button
             id="random-presentation-deck-btn"
             onClick={handleRandomDeck}
@@ -305,13 +480,15 @@ export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSe
             id="select-presentation-deck-dropdown"
             value={selectedDeck.id}
             onChange={(e) => {
-              const found = PRESENTATION_DECKS.find(d => d.id === e.target.value);
+              const found = decks.find(d => d.id === e.target.value);
               if (found) setSelectedDeck(found);
             }}
             className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-purple-500"
           >
-            {PRESENTATION_DECKS.map((d) => (
-              <option key={d.id} value={d.id}>{d.title}</option>
+            {decks.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.isUploaded ? `[Uploaded] ${d.title}` : d.title}
+              </option>
             ))}
           </select>
         </div>
@@ -324,9 +501,16 @@ export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSe
           <div className="p-8 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-700 shadow-2xl flex flex-col justify-between min-h-[440px] relative overflow-hidden">
             {/* Top Slide Header */}
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
-              <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                SLIDE {currentSlide.slideNumber} OF {selectedDeck.slides.length}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  SLIDE {currentSlide.slideNumber} OF {selectedDeck.slides.length}
+                </span>
+                {selectedDeck.isUploaded && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Your Deck
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2 text-xs text-slate-400">
                 <span>Slide Time: <strong className="font-mono text-white">{formatTime(slideTimers[currentSlideIndex] || 0)}</strong></span>
                 <span className="text-slate-600">•</span>
@@ -534,6 +718,214 @@ export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSe
           </div>
         </div>
       </div>
+
+      {/* Upload Presentation Modal */}
+      {isUploadModalOpen && (
+        <div 
+          id="upload-presentation-modal-backdrop"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+        >
+          <div 
+            id="upload-presentation-modal"
+            className="w-full max-w-xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                  <Upload className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Upload Your Presentation</h3>
+                  <p className="text-xs text-slate-400">AI will extract your slides for practice and pitch evaluation</p>
+                </div>
+              </div>
+
+              <button
+                id="close-upload-modal-btn"
+                onClick={() => {
+                  if (!isParsingDeck) {
+                    setIsUploadModalOpen(false);
+                    setUploadError(null);
+                  }
+                }}
+                disabled={isParsingDeck}
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition disabled:opacity-40"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Upload Method Tabs */}
+            <div className="flex border-b border-slate-800 bg-slate-950/50 px-6">
+              <button
+                id="upload-file-tab-btn"
+                onClick={() => setUploadTab('file')}
+                className={`py-3 px-4 text-xs font-semibold border-b-2 transition flex items-center gap-2 ${
+                  uploadTab === 'file'
+                    ? 'border-purple-500 text-purple-400 bg-purple-500/5'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <FileUp className="w-4 h-4" />
+                <span>Upload Document (PDF / PPT / Text)</span>
+              </button>
+
+              <button
+                id="upload-text-tab-btn"
+                onClick={() => setUploadTab('text')}
+                className={`py-3 px-4 text-xs font-semibold border-b-2 transition flex items-center gap-2 ${
+                  uploadTab === 'text'
+                    ? 'border-purple-500 text-purple-400 bg-purple-500/5'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Paste Slide Outline / Notes</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              {uploadError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 text-xs text-rose-300">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span>{uploadError}</span>
+                </div>
+              )}
+
+              {uploadTab === 'file' ? (
+                <div className="space-y-4">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.txt,.md,.markdown,.json,.pptx"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleFileSelected(e.target.files[0]);
+                      }
+                    }}
+                    className="hidden"
+                  />
+
+                  {/* Dropzone Area */}
+                  <div
+                    id="presentation-dropzone"
+                    onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                    onDragLeave={() => setDragActive(false)}
+                    onDrop={handleFileDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center space-y-3 ${
+                      dragActive
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : selectedFile
+                        ? 'border-emerald-500/40 bg-emerald-500/5'
+                        : 'border-slate-700 hover:border-purple-500/60 hover:bg-slate-800/40'
+                    }`}
+                  >
+                    {selectedFile ? (
+                      <>
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-white">{selectedFile.name}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">
+                            {(selectedFile.size / 1024).toFixed(1)} KB • Click or drop another to replace
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                          <Upload className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-slate-200">
+                            Drop your presentation file here
+                          </div>
+                          <div className="text-xs text-slate-400 mt-1">
+                            Or browse to select a file from your computer
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 pt-2 text-[11px] text-slate-500">
+                          <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">PDF Presentations</span>
+                          <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">Text & Markdown</span>
+                          <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">Slide Scripts</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400 space-y-1">
+                    <span className="font-semibold text-slate-300 block">How it works:</span>
+                    <p>
+                      Gemini analyzes your presentation slides, generates an interactive slide deck with target timings and speaker coaching cues, and prepares your session for full pitch evaluation.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-300">Slide Headings & Content Notes</span>
+                    <button
+                      type="button"
+                      onClick={handleInsertSampleOutline}
+                      className="text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Insert Sample Outline</span>
+                    </button>
+                  </div>
+
+                  <textarea
+                    id="paste-outline-textarea"
+                    rows={10}
+                    value={outlineText}
+                    onChange={(e) => setOutlineText(e.target.value)}
+                    placeholder={`# Slide 1: Executive Hook & Problem Statement\n- 85% of startups struggle with customer retention\n- Traditional tools are reactive and slow\n\n# Slide 2: The Solution\n- Real-time automated churn prediction\n- Integrated into existing workflows\n\n# Slide 3: Growth & Traction\n- 400% YoY growth with 250 enterprise logos`}
+                    className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-200 focus:outline-none focus:border-purple-500 leading-relaxed resize-none"
+                  />
+                  <p className="text-[11px] text-slate-500">
+                    Separate slides using "# Slide 1", "Slide 1:", or double line breaks. Bullet points starting with "-" or "*" will be parsed automatically.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-900/90">
+              <button
+                type="button"
+                id="cancel-upload-btn"
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setUploadError(null);
+                }}
+                disabled={isParsingDeck}
+                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition disabled:opacity-40"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                id="submit-parse-deck-btn"
+                onClick={handleParseAndLoadDeck}
+                disabled={isParsingDeck || (uploadTab === 'file' && !selectedFile) || (uploadTab === 'text' && !outlineText.trim())}
+                className={`px-5 py-2 text-xs font-bold text-white rounded-xl shadow-lg transition flex items-center gap-2 ${
+                  isParsingDeck || (uploadTab === 'file' && !selectedFile) || (uploadTab === 'text' && !outlineText.trim())
+                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                    : 'bg-purple-600 hover:bg-purple-500 shadow-purple-600/30 cursor-pointer'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{isParsingDeck ? 'Extracting Slides with AI...' : 'Load & Rehearse Deck'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

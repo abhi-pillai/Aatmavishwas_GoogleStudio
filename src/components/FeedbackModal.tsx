@@ -14,7 +14,11 @@ import {
   Download,
   Flame,
   Zap,
-  BookOpen
+  BookOpen,
+  Presentation,
+  Clock,
+  Layers,
+  ArrowUpRight
 } from 'lucide-react';
 import { FeedbackReport } from '../types';
 
@@ -35,7 +39,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   recordedAudioUrl,
   isOpen,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'vocabulary' | 'transcript'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'presentation' | 'metrics' | 'vocabulary' | 'transcript'>(
+    report?.sessionType === 'presentation' ? 'presentation' : 'overview'
+  );
   const [copied, setCopied] = useState(false);
   const [audioError, setAudioError] = useState(false);
 
@@ -63,6 +69,17 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const isPresentation = report.sessionType === 'presentation' || !!report.presentationReview;
+  const presReview = report.presentationReview;
+
+  const tabs = [
+    { id: 'overview', label: 'Executive Overview', icon: Sparkles },
+    ...(isPresentation ? [{ id: 'presentation', label: 'Pitch & Slide Evaluation', icon: Presentation }] : []),
+    { id: 'metrics', label: 'Acoustic & Pacing Metrics', icon: TrendingUp },
+    { id: 'vocabulary', label: 'Vocabulary & Refinements', icon: BookOpen },
+    { id: 'transcript', label: 'Full Transcript & Audio', icon: FileText },
+  ];
 
   return (
     <div 
@@ -113,13 +130,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-800 px-6 bg-slate-900/60">
-          {[
-            { id: 'overview', label: 'Executive Overview', icon: Sparkles },
-            { id: 'metrics', label: 'Acoustic & Pacing Metrics', icon: TrendingUp },
-            { id: 'vocabulary', label: 'Vocabulary & Refinements', icon: BookOpen },
-            { id: 'transcript', label: 'Full Transcript & Audio', icon: FileText },
-          ].map((tab) => {
+        <div className="flex border-b border-slate-800 px-6 bg-slate-900/60 overflow-x-auto">
+          {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
@@ -303,6 +315,64 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 </div>
               )}
 
+              {/* Presentation Pitch & Shortcomings Overview (if presentation session) */}
+              {presReview && (
+                <div className="p-5 rounded-2xl bg-purple-950/30 border border-purple-500/30 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-purple-300 uppercase tracking-wider">
+                      <Presentation className="w-4 h-4 text-purple-400" />
+                      <span>Presentation Pitch & Slide Flow Summary</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-purple-500/20 text-purple-200 border border-purple-500/30">
+                        Slide Coverage: {presReview.slideCoverageScore}%
+                      </span>
+                      <button
+                        onClick={() => setActiveTab('presentation')}
+                        className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 hover:underline"
+                      >
+                        <span>View Slide Breakdown</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {/* Shortcomings Box */}
+                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-rose-500/30">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-rose-400 uppercase tracking-wider mb-2">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>Identified Pitch Shortcomings</span>
+                      </div>
+                      <ul className="space-y-1.5 text-xs text-slate-300">
+                        {presReview.shortcomings.map((sc, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1.5 shrink-0" />
+                            <span>{sc}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Key Improvements Box */}
+                    <div className="p-3.5 rounded-xl bg-slate-900/80 border border-purple-500/30">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300 uppercase tracking-wider mb-2">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Recommended Pitch Improvements</span>
+                      </div>
+                      <ul className="space-y-1.5 text-xs text-slate-300">
+                        {presReview.presentationImprovements.map((imp, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 shrink-0" />
+                            <span>{imp}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Actionable Micro-Drills */}
               <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-700/60">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
@@ -320,6 +390,161 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Presentation Rehearsal Deep Dive Tab */}
+          {activeTab === 'presentation' && (
+            <div className="space-y-6">
+              {/* Pitch Performance Dial & Alignment */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-5 rounded-2xl bg-gradient-to-b from-purple-950/40 to-slate-900 border border-purple-500/30 flex flex-col items-center justify-center text-center">
+                  <span className="text-xs uppercase tracking-wider text-purple-300 font-semibold mb-1">
+                    Slide Coverage & Alignment
+                  </span>
+                  <div className="text-4xl font-extrabold text-white tracking-tight my-2">
+                    {presReview?.slideCoverageScore ?? 80}%
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full font-medium border text-purple-300 border-purple-500/30 bg-purple-500/10">
+                    Visual-Spoken Synergy
+                  </span>
+                </div>
+
+                <div className="md:col-span-2 p-5 rounded-2xl bg-slate-800/50 border border-slate-700/80 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-bold text-purple-400 uppercase tracking-wider mb-1">
+                      <Sparkles className="w-4 h-4" />
+                      Visual Narrative Alignment
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                      {presReview?.visualNarrativeAlignment || 'Your spoken narrative established good thematic clarity with the slide topics. Continue weaving explicit slide metrics into your spoken commentary.'}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-700/60">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      Time Allocation & Pacing Critique
+                    </div>
+                    <p className="text-xs text-slate-300">
+                      {presReview?.timeAllocationCritique || 'Pacing remained balanced across slides. Ensure you spend sufficient time demonstrating proof points on solution and impact slides.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Shortcomings & Improvements Breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Shortcomings */}
+                <div className="p-5 rounded-2xl bg-slate-800/40 border border-rose-500/30 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-rose-400 uppercase tracking-wider">
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Identified Shortcomings & Delivery Pitfalls</span>
+                  </div>
+                  <ul className="space-y-2.5">
+                    {(presReview?.shortcomings || [
+                      'Rushed through slide transitions without establishing clear verbal handoffs.',
+                      'Key statistical metrics on slides were not explicitly reinforced in the spoken delivery.',
+                      'Concluding call-to-action lacked an authoritative, memorable closing sentence.'
+                    ]).map((shortcoming, i) => (
+                      <li key={i} className="text-xs sm:text-sm text-slate-300 flex items-start gap-2.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-2 shrink-0" />
+                        <span>{shortcoming}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Improvements */}
+                <div className="p-5 rounded-2xl bg-slate-800/40 border border-purple-500/30 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-purple-400 uppercase tracking-wider">
+                    <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                    <span>High-Impact Pitch Improvements</span>
+                  </div>
+                  <ul className="space-y-2.5">
+                    {(presReview?.presentationImprovements || [
+                      'Hook the audience within the first 15 seconds by directly framing the core dilemma.',
+                      'Use structured verbal bridge phrases when advancing to the next slide.',
+                      'Decelerate before delivering the final takeaway to let the message resonate.'
+                    ]).map((improvement, i) => (
+                      <li key={i} className="text-xs sm:text-sm text-slate-300 flex items-start gap-2.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-2 shrink-0" />
+                        <span>{improvement}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Slide-by-Slide Performance Scorecard */}
+              {presReview?.slideBySlideFeedback && presReview.slideBySlideFeedback.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
+                      <Layers className="w-4 h-4 text-purple-400" />
+                      Slide-by-Slide Coaching Scorecard
+                    </div>
+                    <span className="text-xs text-slate-400">
+                      {presReview.slideBySlideFeedback.length} slides reviewed
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {presReview.slideBySlideFeedback.map((item, idx) => {
+                      const isStrong = item.status === 'Strong';
+                      const isRushed = item.status === 'Rushed';
+                      const isOvertime = item.status === 'Overtime';
+                      const badgeClass = isStrong 
+                        ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                        : isRushed
+                        ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                        : isOvertime
+                        ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                        : 'bg-sky-500/15 text-sky-300 border-sky-500/30';
+
+                      return (
+                        <div key={idx} className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/80 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-white truncate">
+                              Slide {item.slideNumber}: {item.slideTitle}
+                            </span>
+                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border shrink-0 ${badgeClass}`}>
+                              {item.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-300 leading-relaxed">
+                            {item.feedback}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Recommended Slide Transition Bridges */}
+              {presReview?.bridgePhraseSuggestions && presReview.bridgePhraseSuggestions.length > 0 && (
+                <div className="p-4 rounded-xl bg-slate-800/30 border border-slate-700/60 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    <ArrowRight className="w-4 h-4 text-purple-400" />
+                    Recommended Verbal Bridge Transitions Between Slides
+                  </div>
+                  <div className="space-y-2.5">
+                    {presReview.bridgePhraseSuggestions.map((bridge, idx) => (
+                      <div key={idx} className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-xs text-slate-200">
+                        <div className="text-[11px] font-semibold text-purple-400 mb-1 flex items-center gap-1.5">
+                          <span>{bridge.fromSlide}</span>
+                          <span>→</span>
+                          <span>{bridge.toSlide}</span>
+                        </div>
+                        <p className="italic text-slate-300">
+                          "{bridge.suggestedPhrase}"
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

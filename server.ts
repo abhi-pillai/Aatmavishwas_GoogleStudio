@@ -175,11 +175,218 @@ function analyzeLocalFillerWords(text: string) {
   return { totalCount, breakdown: breakdown.sort((a, b) => b.count - a.count) };
 }
 
+// Helper to heuristically parse slide text if offline or fallback
+function parsePresentationTextHeuristically(text: string, defaultTitle: string) {
+  if (!text || text.trim().length === 0) {
+    return [
+      {
+        id: 'slide-1',
+        slideNumber: 1,
+        title: defaultTitle,
+        bulletPoints: ['Introduction and problem framing', 'Primary objectives for this session'],
+        speakerNotesTip: 'Hook the audience in the first 15 seconds with a relatable dilemma.',
+        targetDurationSeconds: 45
+      },
+      {
+        id: 'slide-2',
+        slideNumber: 2,
+        title: 'Core Value Proposition & Solution',
+        bulletPoints: ['Key differentiator', 'Demonstrated user or enterprise value', 'Operational impact'],
+        speakerNotesTip: 'Ground your solution in concrete evidence rather than buzzwords.',
+        targetDurationSeconds: 60
+      },
+      {
+        id: 'slide-3',
+        slideNumber: 3,
+        title: 'Call to Action & Next Steps',
+        bulletPoints: ['Immediate milestones', 'Resource or investment ask', 'Closing takeaway'],
+        speakerNotesTip: 'End decisively with an unmistakable ask and confident silence.',
+        targetDurationSeconds: 30
+      }
+    ];
+  }
+
+  // Split by common slide delimiters (Slide 1, # Slide, ---, etc.)
+  const slideChunks = text.split(/(?:^|\n)(?:#+\s*Slide\s*\d+|---+|==+|Slide\s*\d+:)/i).filter(c => c.trim().length > 0);
+
+  if (slideChunks.length >= 2) {
+    return slideChunks.slice(0, 12).map((chunk, idx) => {
+      const lines = chunk.trim().split('\n').map(l => l.trim()).filter(Boolean);
+      const title = lines[0]?.replace(/^[#*-]\s*/, '').slice(0, 60) || `Slide ${idx + 1}`;
+      const bullets = lines.slice(1).filter(l => l.startsWith('-') || l.startsWith('*') || l.startsWith('•')).map(l => l.replace(/^[-*•]\s*/, ''));
+      return {
+        id: `slide-${idx + 1}`,
+        slideNumber: idx + 1,
+        title,
+        bulletPoints: bullets.length > 0 ? bullets.slice(0, 4) : lines.slice(1, 4).map(l => l.slice(0, 100)),
+        speakerNotesTip: 'Keep your delivery conversational and connect each point to audience value.',
+        targetDurationSeconds: 45
+      };
+    });
+  }
+
+  // Split by double newlines into distinct sections
+  const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 15);
+  if (paragraphs.length >= 2) {
+    return paragraphs.slice(0, 8).map((para, idx) => {
+      const lines = para.split('\n').map(l => l.trim()).filter(Boolean);
+      return {
+        id: `slide-${idx + 1}`,
+        slideNumber: idx + 1,
+        title: lines[0]?.replace(/^[#*-]\s*/, '').slice(0, 50) || `Slide ${idx + 1}`,
+        bulletPoints: lines.length > 1 ? lines.slice(1, 4) : [para.slice(0, 120)],
+        speakerNotesTip: 'Emphasize the core insight on this slide before advancing.',
+        targetDurationSeconds: 45
+      };
+    });
+  }
+
+  return [
+    {
+      id: 'slide-1',
+      slideNumber: 1,
+      title: defaultTitle,
+      bulletPoints: ['Introduction & Overview', text.slice(0, 120)],
+      speakerNotesTip: 'Set a clear agenda and engage your listeners early.',
+      targetDurationSeconds: 45
+    }
+  ];
+}
+
 // ================= API ROUTES =================
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// Presentation Upload & Parser Endpoint
+app.post('/api/parse-presentation', async (req: Request, res: Response) => {
+  try {
+    const { fileBase64, fileName = 'presentation', mimeType = 'text/plain', textContent } = req.body;
+    const ai = getGemini();
+    const isPdf = mimeType.includes('pdf') || fileName.toLowerCase().endsWith('.pdf');
+
+    if (ai) {
+      try {
+        let contents: any[] = [];
+
+        if (isPdf && fileBase64) {
+          contents = [
+            {
+              inlineData: {
+                mimeType: 'application/pdf',
+                data: fileBase64,
+              },
+            },
+            {
+              text: `You are an expert presentation structure analyzer and pitch coach.
+Analyze this uploaded presentation PDF and extract each slide carefully into a structured slide deck for presentation rehearsal.
+For each slide identify:
+1. slideNumber: number (1, 2, 3...)
+2. title: string (concise, high-impact slide heading)
+3. bulletPoints: string[] (2-5 key takeaways, data points, or topics on this slide)
+4. speakerNotesTip: string (a punchy, actionable coaching tip on how the presenter should present this slide)
+5. targetDurationSeconds: number (recommended speaking time in seconds, usually 30-75 seconds based on density)
+
+Return valid JSON adhering strictly to this schema:
+{
+  "title": string (overall presentation title or topic),
+  "description": string (1-2 sentence overview of the presentation purpose),
+  "slides": [
+    {
+      "slideNumber": number,
+      "title": string,
+      "bulletPoints": string[],
+      "speakerNotesTip": string,
+      "targetDurationSeconds": number
+    }
+  ]
+}`
+            }
+          ];
+        } else {
+          const rawText = textContent || (fileBase64 ? Buffer.from(fileBase64, 'base64').toString('utf-8') : '');
+          contents = [
+            {
+              text: `You are an expert presentation structure analyzer and pitch coach.
+Analyze the following presentation text, markdown, or outline and extract each slide into a structured slide deck for rehearsal.
+
+Presentation Content:
+"""
+${rawText.slice(0, 15000)}
+"""
+
+Return valid JSON adhering strictly to this schema:
+{
+  "title": string (overall presentation title or topic),
+  "description": string (1-2 sentence overview of the presentation purpose),
+  "slides": [
+    {
+      "slideNumber": number,
+      "title": string,
+      "bulletPoints": string[],
+      "speakerNotesTip": string,
+      "targetDurationSeconds": number
+    }
+  ]
+}`
+            }
+          ];
+        }
+
+        const response = await generateContentWithModelFallback(ai, {
+          contents,
+          config: {
+            responseMimeType: 'application/json',
+          },
+        });
+
+        const parsed = parseJsonSafely(response.text);
+        if (parsed && Array.isArray(parsed.slides) && parsed.slides.length > 0) {
+          const deck = {
+            id: `deck-upload-${Date.now()}`,
+            title: parsed.title || fileName.replace(/\.[^/.]+$/, "") || 'Uploaded Presentation',
+            description: parsed.description || 'Custom presentation uploaded for slide rehearsal and pitch evaluation.',
+            totalSlides: parsed.slides.length,
+            isUploaded: true,
+            fileName,
+            slides: parsed.slides.map((s: any, idx: number) => ({
+              id: `slide-up-${idx + 1}`,
+              slideNumber: s.slideNumber || (idx + 1),
+              title: s.title || `Slide ${idx + 1}`,
+              bulletPoints: Array.isArray(s.bulletPoints) && s.bulletPoints.length > 0 ? s.bulletPoints : ['Key insight for this slide.'],
+              speakerNotesTip: s.speakerNotesTip || 'Engage the audience with conviction and emphasize your primary takeaway.',
+              targetDurationSeconds: s.targetDurationSeconds || 45,
+            })),
+          };
+          return res.json({ deck, success: true });
+        }
+      } catch (geminiErr: any) {
+        console.warn('Gemini presentation parsing warning, falling back to heuristic parser:', geminiErr?.message);
+      }
+    }
+
+    // Heuristic fallback parser for text/markdown or offline fallback
+    const rawText = textContent || (fileBase64 ? Buffer.from(fileBase64, 'base64').toString('utf-8') : '');
+    const cleanTitle = fileName ? fileName.replace(/\.[^/.]+$/, "") : 'Uploaded Presentation';
+    const extractedSlides = parsePresentationTextHeuristically(rawText, cleanTitle);
+
+    const deck = {
+      id: `deck-upload-${Date.now()}`,
+      title: cleanTitle,
+      description: 'Custom presentation uploaded for slide rehearsal and pitch evaluation.',
+      totalSlides: extractedSlides.length,
+      isUploaded: true,
+      fileName,
+      slides: extractedSlides,
+    };
+
+    return res.json({ deck, success: true });
+  } catch (error: any) {
+    console.error('Error parsing presentation:', error);
+    res.status(500).json({ error: error.message || 'Failed to parse presentation file.' });
+  }
 });
 
 // 1. Analyze Speech Endpoint (Core feedback engine)
@@ -191,7 +398,10 @@ app.post('/api/analyze-speech', async (req: Request, res: Response) => {
       sessionType = 'speech',
       title = 'Speech Practice Session',
       role,
-      questionContext 
+      questionContext,
+      slides,
+      slideTimings,
+      deckTitle
     } = req.body;
 
     if (!transcript || transcript.trim().length === 0) {
@@ -213,16 +423,39 @@ app.post('/api/analyze-speech', async (req: Request, res: Response) => {
 
     if (ai) {
       try {
+        const presentationContextText = sessionType === 'presentation' && Array.isArray(slides) && slides.length > 0 ? `
+=== PRESENTATION DECK REHEARSAL DATA ===
+Deck Title: "${deckTitle || title}"
+Total Slides: ${slides.length}
+Slide Outline:
+${slides.map((s: any, idx: number) => `Slide ${s.slideNumber || idx + 1}: "${s.title}"
+  Bullets: ${(s.bulletPoints || []).join('; ')}
+  Target Duration: ${s.targetDurationSeconds || 45}s`).join('\n')}
+
+Slide-by-Slide Timing Recorded:
+${(slideTimings || []).map((t: any) => `Slide ${t.slideNumber || '?'}: "${t.slideTitle || ''}" - Spent: ${t.secondsSpent || 0}s (Target: ${t.targetDurationSeconds || 45}s)`).join('\n')}
+` : '';
+
         const prompt = `
-You are Aatmavishwas, an elite speech and executive communication coach.
+You are Aatmavishwas, an elite executive speech and pitch presentation coach.
 Analyze the following user speech transcript:
 Transcript: "${transcript}"
 Session Type: "${sessionType}"
 Duration: ${durationSeconds} seconds
 Speaking Speed: ${calculatedWpm} WPM (Words Per Minute)
-Title/Context: "${title}" ${questionContext ? `Question: ${questionContext}` : ''} ${role ? `Role: ${role}` : ''}
+Title/Context: "${title}" ${questionContext ? `Question Context: ${questionContext}` : ''} ${role ? `Role: ${role}` : ''}
+${presentationContextText}
 
 Provide a deep, constructive, structured analysis.
+${sessionType === 'presentation' ? `
+CRITICAL FOR PRESENTATION REHEARSAL:
+In addition to general vocal scores, conduct an in-depth pitch and slide rehearsal critique:
+1. Identify specific SHORTCOMINGS and delivery pitfalls (e.g. skipped slide points, rushed slides, rambling, lack of visual-spoken synergy, filler words during slide transitions).
+2. Recommend concrete IMPROVEMENTS to elevate the presentation pitch.
+3. Provide slide-by-slide feedback assessing pacing and message delivery for each slide.
+4. Provide suggested transition bridge phrases between slides.
+` : ''}
+
 Return valid JSON adhering strictly to this schema:
 {
   "clarityScore": number (0-100),
@@ -238,14 +471,36 @@ Return valid JSON adhering strictly to this schema:
     { "original": string, "suggested": string, "explanation": string }
   ] (2-3 suggestions to elevate informal/repetitive phrases into articulate vocabulary),
   "actionableDrills": string[] (2 practical micro-exercises the user can do right now),
-  "sampleImprovedResponse": string (a rewritten, high-impact version of how this idea could be delivered with maximum charisma and structure),
+  "sampleImprovedResponse": string (a rewritten, high-impact version of how this idea or pitch could be delivered with maximum charisma and structure),
   "starAnalysis": {
     "situation": string,
     "task": string,
     "action": string,
     "result": string,
     "score": number
-  } (only if sessionType is "interview", otherwise null)
+  } (only if sessionType is "interview", otherwise null),
+  "presentationReview": {
+    "slideCoverageScore": number (0-100),
+    "visualNarrativeAlignment": string (evaluation of how effectively the spoken narrative aligned with and expanded upon the slide bullets),
+    "timeAllocationCritique": string (critique of time spent per slide vs targets, highlighting rushed or overtime slides),
+    "shortcomings": string[] (3-5 specific, direct shortcomings detected in the pitch delivery, slide flow, or content coverage),
+    "presentationImprovements": string[] (3-4 high-impact recommendations to polish and strengthen this presentation),
+    "slideBySlideFeedback": [
+      {
+        "slideNumber": number,
+        "slideTitle": string,
+        "status": "Strong" | "Needs Work" | "Rushed" | "Overtime",
+        "feedback": string (1-2 sentences of specific coaching feedback for this slide)
+      }
+    ],
+    "bridgePhraseSuggestions": [
+      {
+        "fromSlide": string,
+        "toSlide": string,
+        "suggestedPhrase": string
+      }
+    ]
+  } (only if sessionType is "presentation", otherwise null)
 }
 `;
 
@@ -297,6 +552,7 @@ Return valid JSON adhering strictly to this schema:
             transcript,
             sampleImprovedResponse: parsed.sampleImprovedResponse,
             starAnalysis: parsed.starAnalysis,
+            presentationReview: parsed.presentationReview || null,
           };
 
           sessionStore.unshift(report);
@@ -369,6 +625,66 @@ Return valid JSON adhering strictly to this schema:
         action: "Articulated decisive strategic steps taken to address obstacles directly.",
         result: "Highlighted positive outcomes, quantifiable impact, and key takeaways.",
         score: Math.max(75, overallScore)
+      };
+    }
+
+    if (sessionType === 'presentation') {
+      const slideList = Array.isArray(slides) && slides.length > 0 ? slides : [
+        { slideNumber: 1, title: 'Introduction & Problem Hook', targetDurationSeconds: 45 },
+        { slideNumber: 2, title: 'Solution Architecture', targetDurationSeconds: 60 },
+        { slideNumber: 3, title: 'Business Impact & Next Steps', targetDurationSeconds: 30 },
+      ];
+
+      const timings = Array.isArray(slideTimings) && slideTimings.length > 0 ? slideTimings : [];
+
+      fallbackReport.presentationReview = {
+        slideCoverageScore: Math.min(95, Math.max(65, 75 + Math.floor(wordCount / 35))),
+        visualNarrativeAlignment: 'Your spoken delivery established context for the core topic. To maximize impact, ensure each key bullet or quantitative metric on the slide is highlighted verbally rather than assumed.',
+        timeAllocationCritique: timings.some((t: any) => (t.secondsSpent || 0) > (t.targetDurationSeconds || 45) * 1.5)
+          ? 'Some slides significantly exceeded their target durations. Focus on delivering the core takeaway before advancing.'
+          : 'Pacing was generally balanced across the deck with adequate time given to primary talking points.',
+        shortcomings: [
+          'Occasional hesitation and filler phrasing when switching between consecutive slides.',
+          wordCount < 60 ? 'Spoken explanation was brief relative to the visual content on the slides.' : 'Transition momentum dipped during technical explanations.',
+          'Missing a crisp, memorable concluding call-to-action on the final slide.'
+        ],
+        presentationImprovements: [
+          'Script and memorize a dedicated 1-sentence transition bridge between each slide.',
+          'State the "So What?" implication of each slide in the first 10 seconds of speaking on it.',
+          'End the presentation with confident silence rather than a trailing "so yeah, that is all".'
+        ],
+        slideBySlideFeedback: slideList.map((s: any, idx: number) => {
+          const t = timings.find((tm: any) => tm.slideNumber === s.slideNumber) || { secondsSpent: 30, targetDurationSeconds: s.targetDurationSeconds || 45 };
+          const spent = t.secondsSpent || 0;
+          const target = t.targetDurationSeconds || s.targetDurationSeconds || 45;
+          let status: 'Strong' | 'Needs Work' | 'Rushed' | 'Overtime' = 'Strong';
+          let feedback = `Good delivery on ${s.title}. Solid articulation of main concepts.`;
+          if (spent < 8) {
+            status = 'Rushed';
+            feedback = `Rushed through ${s.title} in ${spent}s. Elaborate on key points before transitioning.`;
+          } else if (spent > target * 1.6) {
+            status = 'Overtime';
+            feedback = `Spent ${spent}s on ${s.title} (target ~${target}s). Condense secondary details to keep pace.`;
+          }
+          return {
+            slideNumber: s.slideNumber || idx + 1,
+            slideTitle: s.title || `Slide ${idx + 1}`,
+            status,
+            feedback,
+          };
+        }),
+        bridgePhraseSuggestions: [
+          {
+            fromSlide: slideList[0]?.title || 'Slide 1',
+            toSlide: slideList[1]?.title || 'Slide 2',
+            suggestedPhrase: 'Now that we have established the core problem, let us examine the strategic solution...'
+          },
+          {
+            fromSlide: slideList[1]?.title || 'Slide 2',
+            toSlide: slideList[2]?.title || 'Slide 3',
+            suggestedPhrase: 'Having reviewed our solution architecture, let us turn to the concrete business milestones...'
+          }
+        ]
       };
     }
 
