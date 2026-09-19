@@ -109,9 +109,16 @@ export interface PresentationDeck {
   slides: PresentationSlide[];
 }
 
+export interface SpeechPrompt {
+  id: string;
+  category: string;
+  title: string;
+  guidance: string;
+}
+
 export interface DailyChallenge {
   id: string;
-  type: 'opinion' | 'debate' | 'storytelling' | 'impromptu';
+  type: 'opinion' | 'debate' | 'storytelling' | 'impromptu' | 'pitch' | 'warmup' | 'explanation';
   title: string;
   prompt: string;
   prepTimeSeconds: number;

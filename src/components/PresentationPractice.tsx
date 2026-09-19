@@ -13,7 +13,8 @@ import {
   Layers, 
   CheckCircle2,
   Lightbulb,
-  Maximize2
+  Maximize2,
+  Shuffle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { PRESENTATION_DECKS } from '../data/mockData';
@@ -59,6 +60,18 @@ export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSe
       if (recorderRef.current) recorderRef.current.stopRecording().catch(() => {});
     };
   }, []);
+
+  const handleRandomDeck = () => {
+    if (isRecording) {
+      handleStopRehearsal();
+    }
+    const others = PRESENTATION_DECKS.filter(d => d.id !== selectedDeck.id);
+    if (others.length > 0) {
+      const picked = others[Math.floor(Math.random() * others.length)];
+      setSelectedDeck(picked);
+      setStatusNotice(`Switched to deck: "${picked.title}"`);
+    }
+  };
 
   const handleStartRehearsal = async () => {
     setTranscript('');
@@ -278,8 +291,16 @@ export const PresentationPractice: React.FC<PresentationPracticeProps> = ({ onSe
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-slate-400">Select Deck:</span>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <button
+            id="random-presentation-deck-btn"
+            onClick={handleRandomDeck}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-400 hover:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-xl transition active:scale-95"
+            title="Pick a random presentation deck"
+          >
+            <Shuffle className="w-3.5 h-3.5" />
+            <span>Random Deck</span>
+          </button>
           <select
             id="select-presentation-deck-dropdown"
             value={selectedDeck.id}

@@ -11,7 +11,8 @@ import {
   RotateCcw, 
   ArrowRight,
   Award,
-  AlertTriangle
+  AlertTriangle,
+  Shuffle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { DAILY_CHALLENGES } from '../data/mockData';
@@ -26,6 +27,7 @@ interface DailyChallengesProps {
 
 export const DailyChallenges: React.FC<DailyChallengesProps> = ({ onSessionComplete, streakDays }) => {
   const [selectedChallenge, setSelectedChallenge] = useState<DailyChallenge>(DAILY_CHALLENGES[0]);
+  const [challengeFilter, setChallengeFilter] = useState<string>('all');
   const [phase, setPhase] = useState<'intro' | 'prep' | 'speaking' | 'completed'>('intro');
 
   const [prepTimeRemaining, setPrepTimeRemaining] = useState(selectedChallenge.prepTimeSeconds);
@@ -44,6 +46,26 @@ export const DailyChallenges: React.FC<DailyChallengesProps> = ({ onSessionCompl
   const recorderRef = useRef<AudioRecorderController | null>(null);
   const recognizerRef = useRef<any>(null);
   const timerRef = useRef<any>(null);
+
+  const challengeTypes = ['all', 'impromptu', 'opinion', 'storytelling', 'pitch', 'warmup', 'explanation'];
+  
+  const filteredChallenges = challengeFilter === 'all'
+    ? DAILY_CHALLENGES
+    : DAILY_CHALLENGES.filter(c => c.type === challengeFilter);
+
+  const handleRandomChallenge = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (recorderRef.current) recorderRef.current.stopRecording().catch(() => {});
+    if (recognizerRef.current) recognizerRef.current.stop();
+
+    const candidates = filteredChallenges.filter(c => c.id !== selectedChallenge.id);
+    const pool = candidates.length > 0 ? candidates : DAILY_CHALLENGES.filter(c => c.id !== selectedChallenge.id);
+    if (pool.length > 0) {
+      const picked = pool[Math.floor(Math.random() * pool.length)];
+      setSelectedChallenge(picked);
+      setStatusNotice(`Switched to: "${picked.title}"`);
+    }
+  };
 
   useEffect(() => {
     setPrepTimeRemaining(selectedChallenge.prepTimeSeconds);
@@ -275,27 +297,71 @@ export const DailyChallenges: React.FC<DailyChallengesProps> = ({ onSessionCompl
       </div>
 
       {/* Challenge Selector */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {DAILY_CHALLENGES.map((c) => {
-          const isSelected = selectedChallenge.id === c.id;
-          return (
-            <div
-              key={c.id}
-              onClick={() => setSelectedChallenge(c)}
-              className={`p-4 rounded-xl border cursor-pointer transition ${
-                isSelected 
-                  ? 'bg-amber-500/10 border-amber-500/60 shadow-md ring-1 ring-amber-500/30' 
-                  : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-amber-300 mb-1.5 inline-block">
-                {c.type}
-              </span>
-              <h4 className="text-sm font-bold text-white mb-1">{c.title}</h4>
-              <p className="text-xs text-slate-400 line-clamp-2">{c.prompt}</p>
-            </div>
-          );
-        })}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Drills:</span>
+            {challengeTypes.map((type) => (
+              <button
+                key={type}
+                onClick={() => setChallengeFilter(type)}
+                className={`px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition capitalize ${
+                  challengeFilter === type
+                    ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                    : 'bg-slate-800/80 text-slate-400 hover:text-white border border-slate-700/60'
+                }`}
+              >
+                {type === 'all' ? `All (${DAILY_CHALLENGES.length})` : type}
+              </button>
+            ))}
+          </div>
+
+          <button
+            id="random-daily-challenge-btn"
+            onClick={handleRandomChallenge}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl transition self-start sm:self-auto shrink-0 active:scale-95"
+            title="Pick a random challenge"
+          >
+            <Shuffle className="w-3.5 h-3.5" />
+            <span>Random Challenge</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[360px] overflow-y-auto pr-1">
+          {filteredChallenges.map((c) => {
+            const isSelected = selectedChallenge.id === c.id;
+            return (
+              <div
+                key={c.id}
+                onClick={() => setSelectedChallenge(c)}
+                className={`p-4 rounded-xl border cursor-pointer transition text-left flex flex-col justify-between ${
+                  isSelected 
+                    ? 'bg-amber-500/15 border-amber-500/60 shadow-md ring-1 ring-amber-500/30' 
+                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1.5">
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-amber-300">
+                      {c.type}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {c.prepTimeSeconds}s prep • {c.speakingTimeSeconds}s speak
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white mb-1 leading-snug">{c.title}</h4>
+                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{c.prompt}</p>
+                </div>
+                {isSelected && (
+                  <div className="mt-2 pt-2 border-t border-amber-500/20 text-[11px] font-semibold text-amber-300 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Selected for Practice</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Main Challenge Arena */}

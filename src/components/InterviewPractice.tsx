@@ -13,7 +13,8 @@ import {
   Layers,
   ChevronRight,
   Filter,
-  AlertCircle
+  AlertCircle,
+  Shuffle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { INTERVIEW_QUESTIONS } from '../data/mockData';
@@ -65,6 +66,19 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
   const filteredQuestions = selectedRole === 'All Roles'
     ? INTERVIEW_QUESTIONS
     : INTERVIEW_QUESTIONS.filter(q => q.role === selectedRole);
+
+  const handleRandomQuestion = () => {
+    setIsCustomMode(false);
+    const candidates = filteredQuestions.filter(q => q.id !== currentQuestion.id);
+    const pool = candidates.length > 0 ? candidates : INTERVIEW_QUESTIONS.filter(q => q.id !== currentQuestion.id);
+    if (pool.length > 0) {
+      const picked = pool[Math.floor(Math.random() * pool.length)];
+      setCurrentQuestion(picked);
+      setTranscript('');
+      setRecordingTime(0);
+      setStatusNotice(`Switched to question: "${picked.question.slice(0, 50)}..."`);
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -332,17 +346,28 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
         {/* Left Column: Questions List & STAR Cheat Sheet */}
         <div className="lg:col-span-1 space-y-4">
           <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-1 flex-wrap">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Select Question
+                Questions ({filteredQuestions.length})
               </span>
-              <button
-                id="toggle-custom-interview-q-btn"
-                onClick={() => setIsCustomMode(!isCustomMode)}
-                className="text-xs text-sky-400 hover:text-sky-300 font-semibold"
-              >
-                {isCustomMode ? 'Pick Standard Q' : '+ Custom Q'}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  id="random-interview-q-btn"
+                  onClick={handleRandomQuestion}
+                  className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-sky-400 hover:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-lg transition"
+                  title="Pick a random interview question"
+                >
+                  <Shuffle className="w-3 h-3" />
+                  <span>Random</span>
+                </button>
+                <button
+                  id="toggle-custom-interview-q-btn"
+                  onClick={() => setIsCustomMode(!isCustomMode)}
+                  className="text-xs text-sky-400 hover:text-sky-300 font-semibold px-2 py-1 rounded-lg hover:bg-sky-500/10 transition"
+                >
+                  {isCustomMode ? 'Standard Q' : '+ Custom'}
+                </button>
+              </div>
             </div>
 
             {isCustomMode ? (
@@ -356,7 +381,7 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
                 />
               </div>
             ) : (
-              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
                 {filteredQuestions.map((q) => {
                   const isSelected = currentQuestion.id === q.id;
                   return (
@@ -365,14 +390,17 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
                       onClick={() => setCurrentQuestion(q)}
                       className={`p-3 rounded-xl border cursor-pointer transition text-left ${
                         isSelected 
-                          ? 'bg-sky-500/10 border-sky-500/60 shadow-sm' 
+                          ? 'bg-sky-500/15 border-sky-500/60 shadow-sm ring-1 ring-sky-500/30' 
                           : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
                       }`}
                     >
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-sky-300 border border-slate-700 mb-1 inline-block">
-                        {q.category}
-                      </span>
-                      <p className="text-xs font-semibold text-slate-200 line-clamp-2">
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-sky-300 border border-slate-700">
+                          {q.category}
+                        </span>
+                        {isSelected && <span className="text-[9px] font-bold text-sky-400">Selected</span>}
+                      </div>
+                      <p className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed">
                         {q.question}
                       </p>
                     </div>

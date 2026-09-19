@@ -10,14 +10,15 @@ import {
   Check, 
   Volume2, 
   Flame, 
-  FileText,
-  Sliders,
-  ChevronDown,
-  ChevronUp,
-  ShieldAlert,
-  HardDrive,
-  Info,
-  X
+  FileText, 
+  Sliders, 
+  ChevronDown, 
+  ChevronUp, 
+  ShieldAlert, 
+  HardDrive, 
+  Info, 
+  X,
+  Shuffle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { AudioWaveform } from './AudioWaveform';
@@ -29,33 +30,7 @@ import {
   MediaRecorderSupportStatus
 } from '../utils/audioUtils';
 import { FeedbackReport } from '../types';
-
-const SPEECH_PROMPTS = [
-  {
-    id: 'p1',
-    category: 'Leadership & Vision',
-    title: 'The Leader I Aspire to Become',
-    guidance: 'Outline the core values, communication style, and ethical compass that define your ideal leadership archetype.'
-  },
-  {
-    id: 'p2',
-    category: 'Persuasive Oratory',
-    title: 'Why Slowing Down is the Secret to Speed',
-    guidance: 'Persuade your audience that deliberate reflection yields faster, superior long-term results than relentless rush.'
-  },
-  {
-    id: 'p3',
-    category: 'Tech & Society',
-    title: 'Human Agency in an Autonomous Era',
-    guidance: 'Deliver a structured 2-minute perspective on what irreplaceable human traits we must preserve as AI evolves.'
-  },
-  {
-    id: 'p4',
-    category: 'Personal Narrative',
-    title: 'A Moment that Shifted My Perspective',
-    guidance: 'Tell a compelling personal story with clear scene-setting, a central conflict/epiphany, and an emotional takeaway.'
-  }
-];
+import { SPEECH_PROMPTS } from '../data/mockData';
 
 interface SpeechPracticeProps {
   onSessionComplete: (report: FeedbackReport, audioUrl?: string) => void;
@@ -63,6 +38,7 @@ interface SpeechPracticeProps {
 
 export const SpeechPractice: React.FC<SpeechPracticeProps> = ({ onSessionComplete }) => {
   const [selectedPrompt, setSelectedPrompt] = useState(SPEECH_PROMPTS[0]);
+  const [promptCategoryFilter, setPromptCategoryFilter] = useState<string>('all');
   const [customTitle, setCustomTitle] = useState('');
   const [isCustom, setIsCustom] = useState(false);
   const [prepNotes, setPrepNotes] = useState('');
@@ -95,6 +71,22 @@ export const SpeechPractice: React.FC<SpeechPracticeProps> = ({ onSessionComplet
   isRecordingRef.current = isRecording;
 
   const activeTitle = isCustom ? (customTitle || 'Custom Speech Topic') : selectedPrompt.title;
+
+  const handleRandomPrompt = () => {
+    setIsCustom(false);
+    const candidates = SPEECH_PROMPTS.filter(p => p.id !== selectedPrompt.id);
+    if (candidates.length > 0) {
+      const picked = candidates[Math.floor(Math.random() * candidates.length)];
+      setSelectedPrompt(picked);
+      setStatusType('info');
+      setStatusNotice(`Switched to random prompt: "${picked.title}"`);
+    }
+  };
+
+  const categories = ['all', ...Array.from(new Set(SPEECH_PROMPTS.map(p => p.category)))];
+  const filteredPrompts = promptCategoryFilter === 'all' 
+    ? SPEECH_PROMPTS 
+    : SPEECH_PROMPTS.filter(p => p.category === promptCategoryFilter);
 
   // Live filler detection
   useEffect(() => {
@@ -488,18 +480,29 @@ export const SpeechPractice: React.FC<SpeechPracticeProps> = ({ onSessionComplet
         {/* Left Column: Prompt Selection & Outline (Always visible on desktop, toggleable on mobile) */}
         <div className={`${isMobilePromptOpen ? 'block' : 'hidden'} lg:block lg:col-span-1 space-y-4`}>
           <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
                 Speech Topic
               </span>
-              <button
-                id="toggle-custom-topic-btn"
-                onClick={() => setIsCustom(!isCustom)}
-                className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold p-1 min-h-[36px] flex items-center"
-              >
-                {isCustom ? 'Pick Preset Topic' : '+ Custom Topic'}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  id="random-speech-prompt-btn"
+                  onClick={handleRandomPrompt}
+                  className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 rounded-lg transition"
+                  title="Pick random speech prompt"
+                >
+                  <Shuffle className="w-3 h-3" />
+                  <span>Random</span>
+                </button>
+                <button
+                  id="toggle-custom-topic-btn"
+                  onClick={() => setIsCustom(!isCustom)}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold px-2 py-1 rounded-lg hover:bg-indigo-500/10 transition"
+                >
+                  {isCustom ? 'Presets' : '+ Custom'}
+                </button>
+              </div>
             </div>
 
             {isCustom ? (
@@ -514,32 +517,54 @@ export const SpeechPractice: React.FC<SpeechPracticeProps> = ({ onSessionComplet
                 <p className="text-[11px] text-slate-400">Choose any topic: conference keynote, wedding toast, or company update.</p>
               </div>
             ) : (
-              <div className="space-y-2 sm:space-y-2.5">
-                {SPEECH_PROMPTS.map((p) => {
-                  const isSelected = selectedPrompt.id === p.id;
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => {
-                        setSelectedPrompt(p);
-                        setIsMobilePromptOpen(false);
-                      }}
-                      className={`p-3 sm:p-3.5 rounded-xl border cursor-pointer transition min-h-[44px] touch-manipulation ${
-                        isSelected 
-                          ? 'bg-indigo-600/15 border-indigo-500/60 shadow-sm' 
-                          : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+              <div className="space-y-2.5">
+                {/* Category filter pills */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar text-[11px]">
+                  {categories.slice(0, 5).map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setPromptCategoryFilter(cat)}
+                      className={`px-2 py-0.5 rounded-md whitespace-nowrap transition capitalize font-medium ${
+                        promptCategoryFilter === cat 
+                          ? 'bg-indigo-600 text-white' 
+                          : 'bg-slate-800/80 text-slate-400 hover:text-slate-200'
                       }`}
                     >
-                      <div className="text-[11px] font-semibold text-indigo-400 mb-0.5">{p.category}</div>
-                      <div className="text-xs sm:text-sm font-bold text-white leading-snug">{p.title}</div>
-                      {isSelected && (
-                        <p className="text-xs text-slate-300 mt-2 italic border-t border-slate-800/80 pt-1.5 leading-relaxed">
-                          "{p.guidance}"
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
+                      {cat === 'all' ? 'All (16)' : cat.split(' ')[0]}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
+                  {filteredPrompts.map((p) => {
+                    const isSelected = selectedPrompt.id === p.id;
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setSelectedPrompt(p);
+                          setIsMobilePromptOpen(false);
+                        }}
+                        className={`p-3 rounded-xl border cursor-pointer transition min-h-[44px] touch-manipulation ${
+                          isSelected 
+                            ? 'bg-indigo-600/15 border-indigo-500/60 shadow-sm ring-1 ring-indigo-500/30' 
+                            : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="text-[10px] font-semibold text-indigo-400">{p.category}</span>
+                          {isSelected && <span className="text-[9px] px-1.5 py-0.2 text-indigo-300 bg-indigo-500/20 rounded font-bold">Active</span>}
+                        </div>
+                        <div className="text-xs sm:text-sm font-bold text-white leading-snug">{p.title}</div>
+                        {isSelected && (
+                          <p className="text-xs text-slate-300 mt-2 italic border-t border-slate-800/80 pt-1.5 leading-relaxed">
+                            "{p.guidance}"
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

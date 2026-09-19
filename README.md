@@ -158,6 +158,18 @@ The audio recording engine (`src/utils/audioUtils.ts`) is designed for maximum r
 
 ---
 
+## 📚 Practice Content & Topic Library
+
+The platform includes an extensive collection of structured prompts and randomizer buttons (`Shuffle`) across all practice modes:
+
+- **Group Discussions (GD)**: 16 structured topics across Business Strategy, Tech Ethics, Environmental Policy, and Abstract/Philosophical themes with dynamic multi-agent persona interactions.
+- **Speech Practice Studio**: 16 oratory prompts across Leadership & Vision, Persuasive Oratory, Tech & Society, Personal Narrative, and Crisis Communication, with category filtering and instant prompt randomization.
+- **Interview Simulator**: 16 STAR-method questions covering General HR Behavioral, Software Engineering & System Design, Product Strategy, Management & Scaling, and Sales Negotiations.
+- **Daily Spontaneous Drills**: 10 micro-challenges across Impromptu, Opinion, Storytelling, Pitch, Warmup, and Technical Explanation formats with prep and speech timers.
+- **Presentation Decks**: 4 complete multi-slide rehearsal decks (Seed Pitch Deck, Product Architecture Review, Company All-Hands Roadmap, and Crisis Management Briefing).
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites

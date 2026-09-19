@@ -12,7 +12,8 @@ import {
   Hand,
   RotateCcw,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Shuffle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { GD_TOPICS, DEFAULT_GD_PARTICIPANTS } from '../data/mockData';
@@ -72,6 +73,37 @@ export const GroupDiscussionPractice: React.FC<GroupDiscussionPracticeProps> = (
       if (recorderRef.current) recorderRef.current.stopRecording().catch(() => {});
     };
   }, []);
+
+  // Topic switcher helper
+  const handleSwitchTopic = (topic: GDTopic) => {
+    setSelectedTopic(topic);
+    setUserSpeakingTime(0);
+    setCurrentTurnTime(0);
+    setUserTranscript('');
+    setTotalDiscussionSeconds(5);
+    setParticipants(DEFAULT_GD_PARTICIPANTS);
+    setMessages([
+      {
+        id: `m-${Date.now()}`,
+        senderId: 'moderator',
+        senderName: 'GD Moderator',
+        isUser: false,
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+        text: `Welcome to our deliberations on: "${topic.title}". Category: ${topic.category}. Remember to build upon each other's ideas and articulate well-reasoned viewpoints. Who would like to open the discussion?`,
+        timestamp: '00:05',
+        durationSeconds: 10,
+      }
+    ]);
+    setStatusNotice(`Switched debate motion to: "${topic.title.slice(0, 48)}..."`);
+  };
+
+  const handleRandomTopic = () => {
+    const candidates = GD_TOPICS.filter(t => t.id !== selectedTopic.id);
+    if (candidates.length > 0) {
+      const randomPicked = candidates[Math.floor(Math.random() * candidates.length)];
+      handleSwitchTopic(randomPicked);
+    }
+  };
 
   // When user takes the floor
   const handleTakeFloor = async () => {
@@ -318,28 +350,43 @@ export const GroupDiscussionPractice: React.FC<GroupDiscussionPracticeProps> = (
       )}
 
       {/* Topic Selection Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Room Motion</span>
-          <h3 className="text-sm font-bold text-white mt-0.5">{selectedTopic.title}</h3>
-          <p className="text-xs text-slate-400 mt-1">{selectedTopic.brief}</p>
+      <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Room Motion</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              {selectedTopic.category}
+            </span>
+          </div>
+          <h3 className="text-sm sm:text-base font-bold text-white leading-snug">{selectedTopic.title}</h3>
+          <p className="text-xs text-slate-400 leading-relaxed">{selectedTopic.brief}</p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-slate-400">Switch Topic:</span>
-          <select
-            id="select-gd-topic-dropdown"
-            value={selectedTopic.id}
-            onChange={(e) => {
-              const found = GD_TOPICS.find(t => t.id === e.target.value);
-              if (found) setSelectedTopic(found);
-            }}
-            className="px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+          <button
+            onClick={handleRandomTopic}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 rounded-xl text-xs font-semibold transition active:scale-95 shadow-sm"
+            title="Pick a random GD topic"
           >
-            {GD_TOPICS.map((t) => (
-              <option key={t.id} value={t.id}>{t.title.slice(0, 40)}...</option>
-            ))}
-          </select>
+            <Shuffle className="w-3.5 h-3.5" />
+            <span>Random Topic</span>
+          </button>
+
+          <div className="flex items-center gap-1.5">
+            <select
+              id="select-gd-topic-dropdown"
+              value={selectedTopic.id}
+              onChange={(e) => {
+                const found = GD_TOPICS.find(t => t.id === e.target.value);
+                if (found) handleSwitchTopic(found);
+              }}
+              className="px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-emerald-500 max-w-[220px] sm:max-w-[260px] truncate"
+            >
+              {GD_TOPICS.map((t) => (
+                <option key={t.id} value={t.id}>[{t.category}] {t.title}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
