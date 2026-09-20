@@ -178,3 +178,14 @@ export interface CoachChatMessage {
   text: string;
   timestamp: string;
 }
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  username: string;
+  displayName: string;
+  createdAt: string;
+  photoURL?: string;
+  bio?: string;
+}
+

@@ -4,5 +4,16 @@ dist/
 coverage/
 .DS_Store
 *.log
+# Private environment variables & credentials
+.env
 .env*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 !.env.example
+
+# Firebase applet credentials & private configuration
+firebase-applet-config.json
+firebase_applet_config.xml
+

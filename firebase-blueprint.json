@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile data stored under /users/{userId}",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID matching the user document ID"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address"
+        },
+        "username": {
+          "type": "string",
+          "description": "Unique username in lowercase"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Full display name of the user"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of account creation"
+        }
+      },
+      "required": ["uid", "email", "username", "displayName", "createdAt"]
+    },
+    "UsernameMapping": {
+      "title": "UsernameMapping",
+      "description": "Unique username index mapping username to email and uid for username-based login",
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "Lowercase username"
+        },
+        "uid": {
+          "type": "string",
+          "description": "Associated Firebase Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Associated user email address"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp when the username was registered"
+        }
+      },
+      "required": ["username", "uid", "email", "createdAt"]
+    },
+    "SessionReport": {
+      "title": "SessionReport",
+      "description": "Practice session report created by the user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Session ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user ID"
+        },
+        "sessionType": {
+          "type": "string",
+          "enum": ["speech", "interview", "gd", "presentation", "drill"],
+          "description": "Type of practice session"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title or topic of session"
+        },
+        "date": {
+          "type": "string",
+          "description": "Session ISO date"
+        },
+        "overallScore": {
+          "type": "number",
+          "description": "Overall score between 0 and 100"
+        },
+        "metrics": {
+          "type": "object",
+          "description": "Communication metrics breakdown"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Summary feedback"
+        }
+      },
+      "required": ["id", "userId", "sessionType", "title", "date", "overallScore"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Private user account profile and settings"
+    },
+    "/usernames/{username}": {
+      "schema": "UsernameMapping",
+      "description": "Public username registry to allow sign in using either email or username"
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": "SessionReport",
+      "description": "Historical practice session reports saved by user"
+    }
+  }
+}

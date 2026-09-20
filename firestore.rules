@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- Global Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUsername(username) {
+      return username is string && username.size() >= 3 && username.size() <= 30 && username.matches('^[a-zA-Z0-9_]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'username', 'displayName', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'email', 'username', 'displayName', 'createdAt', 'photoURL', 'bio'])
+        && data.uid == userId
+        && data.email is string && data.email.size() <= 256
+        && isValidUsername(data.username)
+        && data.displayName is string && data.displayName.size() <= 100
+        && data.createdAt is string;
+    }
+
+    // --- User Profiles ---
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      
+      allow create: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId);
+        
+      allow update: if isOwner(userId)
+        && isValidId(userId)
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'bio'])
+        && incoming().displayName is string && incoming().displayName.size() <= 100;
+        
+      allow delete: if false;
+
+      // User session history subcollection
+      match /sessions/{sessionId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // --- Username Index (to support signing in by username) ---
+    match /usernames/{username} {
+      // Allow single lookups to resolve username to email on sign-in
+      allow get: if isValidUsername(username);
+      // Deny collection scans/enumeration
+      allow list: if false;
+
+      // Only an authenticated user can claim an unclaimed username for their own UID
+      allow create: if isSignedIn()
+        && isValidUsername(username)
+        && incoming().keys().hasAll(['username', 'uid', 'email', 'createdAt'])
+        && incoming().keys().hasOnly(['username', 'uid', 'email', 'createdAt'])
+        && incoming().uid == request.auth.uid
+        && incoming().username == username
+        && !exists(/databases/$(database)/documents/usernames/$(username));
+
+      allow update, delete: if false;
+    }
+  }
+}
