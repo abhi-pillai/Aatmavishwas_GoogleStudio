@@ -169,6 +169,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-1',
     role: 'General & HR Behavioral',
+    discipline: 'General & HR Behavioral',
     category: 'HR / Behavioral',
     question: 'Tell me about yourself and what motivates your professional journey.',
     contextTip: 'Keep it between 90-120 seconds. Focus on the Present (current role/skills), Past (key formative experiences), and Future (why this role aligns).',
@@ -178,6 +179,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-2',
     role: 'General & HR Behavioral',
+    discipline: 'General & HR Behavioral',
     category: 'HR / Behavioral',
     question: 'Describe a situation where a project went off track. What actions did you take to salvage it?',
     contextTip: 'Use STAR format. Don\'t blame others; highlight your diagnostic capability, corrective measures, and measurable outcome.',
@@ -187,6 +189,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-3',
     role: 'Software Engineering & Tech',
+    discipline: 'Software Engineering',
     category: 'Technical',
     question: 'How do you approach designing a scalable, fault-tolerant system under high concurrency?',
     contextTip: 'Mention decoupling, caching strategies, rate limiting, database sharding, resilience patterns (circuit breakers), and monitoring.',
@@ -196,6 +199,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-4',
     role: 'Product Management',
+    discipline: 'Product Management',
     category: 'Problem Solving',
     question: 'How do you decide between building a feature that users are asking for vs. an unasked innovation that addresses an underlying need?',
     contextTip: 'Distinguish customer voice vs customer intent. Discuss discovery interviews, metrics, risk mitigation, and iterative MVP validation.',
@@ -205,6 +209,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-5',
     role: 'Leadership & Management',
+    discipline: 'Leadership & Management',
     category: 'Leadership',
     question: 'How do you handle delivering difficult feedback to a high-performing employee whose attitude is disrupting team cohesion?',
     contextTip: 'Emphasize timely 1-on-1 setting, specific observed behaviors rather than personality judgements, empathy, and clear mutual goals.',
@@ -214,6 +219,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-6',
     role: 'Sales & Client Relations',
+    discipline: 'Sales & Client Relations',
     category: 'Problem Solving',
     question: 'Walk me through how you handle a client objection regarding high pricing during final contract negotiations.',
     contextTip: 'Acknowledge the concern, re-anchor on total value/ROI, explore timeline/scope trade-offs rather than immediate discounting.',
@@ -223,6 +229,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-7',
     role: 'General & HR Behavioral',
+    discipline: 'General & HR Behavioral',
     category: 'HR / Behavioral',
     question: 'Tell me about a time you had a strong disagreement with a senior stakeholder or teammate. How did you handle it?',
     contextTip: 'Showcase emotional maturity, listening to the opposing thesis, bringing objective data to the table, and committing fully to the final decision.',
@@ -232,6 +239,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-8',
     role: 'General & HR Behavioral',
+    discipline: 'General & HR Behavioral',
     category: 'HR / Behavioral',
     question: 'What is your greatest professional failure, and what structural changes did you implement in response?',
     contextTip: 'Pick a genuine setback, take full accountability without defensive excuses, and prove how it catalyzed permanent improvement.',
@@ -241,6 +249,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-9',
     role: 'Software Engineering & Tech',
+    discipline: 'Software Engineering',
     category: 'Technical',
     question: 'Walk me through a time you diagnosed and resolved an elusive memory leak or severe latency spike in a production environment.',
     contextTip: 'Structure logically: symptom detection, observability telemetry (profilers, traces), hypothesis isolation, targeted hotfix, and post-mortem guards.',
@@ -250,6 +259,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-10',
     role: 'Software Engineering & Tech',
+    discipline: 'Software Engineering',
     category: 'Technical',
     question: 'How do you systematically balance shipping quick tactical product features against addressing chronic architectural technical debt?',
     contextTip: 'Discuss debt categorization (interest vs principal), establishing dedicated allocation quotas, and articulating technical debt in business risk terms.',
@@ -259,6 +269,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-11',
     role: 'Product Management',
+    discipline: 'Product Management',
     category: 'Problem Solving',
     question: 'If your primary onboarding conversion metric plummeted by 20% over a 48-hour window, what would be your diagnostic playbook?',
     contextTip: 'Outline systematic triage: instrument verification, cohort segmentation (OS, region, version), recent deploy diffs, user session replay, and triage war room.',
@@ -268,6 +279,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-12',
     role: 'Product Management',
+    discipline: 'Product Management',
     category: 'Problem Solving',
     question: 'How do you gracefully sunset or deprecate a legacy feature that still has a vocal minority of enthusiastic users?',
     contextTip: 'Cover usage metrics, clear advance communication runway, viable migration pathways, customer support readiness, and empathy for affected workflows.',
@@ -277,6 +289,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-13',
     role: 'Leadership & Management',
+    discipline: 'Leadership & Management',
     category: 'Leadership',
     question: 'How do you deliberately cultivate psychological safety so that junior teammates feel empowered to flag flaws in senior plans?',
     contextTip: 'Discuss modeling vulnerability, praising productive dissent, running blameless post-mortems, and asking open-ended prompting questions in meetings.',
@@ -286,6 +299,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-14',
     role: 'Leadership & Management',
+    discipline: 'Leadership & Management',
     category: 'Leadership',
     question: 'Describe how you mobilized and restored morale across a discouraged team following an unexpected project cancellation or re-org.',
     contextTip: 'Acknowledge grief and frustration candidly, highlight salvageable engineering assets, and reconnect individuals with immediate meaningful goals.',
@@ -295,6 +309,7 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-15',
     role: 'Sales & Client Relations',
+    discipline: 'Sales & Client Relations',
     category: 'Problem Solving',
     question: 'How do you de-escalate and rebuild trust with an enterprise client immediately following a catastrophic SLA outage on their critical path?',
     contextTip: 'Focus on extreme ownership, avoiding blame games, providing an hourly transparency cadence, root-cause transparency, and contractual remediation.',
@@ -304,11 +319,336 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   {
     id: 'iq-16',
     role: 'Sales & Client Relations',
+    discipline: 'Sales & Client Relations',
     category: 'Problem Solving',
     question: 'How do you uncover a prospective buyer\'s unspoken organizational roadblocks when they seem guarded during discovery calls?',
     contextTip: 'Discuss consultative questioning, psychological safety, asking third-party reference questions, and focusing on their personal KPI pressures.',
     targetDurationSeconds: 100,
     idealKeywords: ['consultative inquiry', 'uncovering latent needs', 'active listening', 'trusted advisor']
+  },
+
+  // ---------------------------------------------------------------------------
+  // FINANCE DISCIPLINE
+  // ---------------------------------------------------------------------------
+  {
+    id: 'iq-fin-1',
+    role: 'Finance & Banking',
+    discipline: 'Finance',
+    category: 'Technical',
+    question: 'Walk me through how a $10 increase in depreciation cascades through the Income Statement, Cash Flow Statement, and Balance Sheet (assuming a 20% tax rate).',
+    contextTip: 'Break it down systematically: Operating income drops by $10, tax expense decreases by $2, so net income decreases by $8. On Cash Flow from Operations, net income starts -$8, you add back $10 non-cash depreciation, leaving net cash +$2. On Balance Sheet, cash is +$2, PP&E is -$10, balancing retained earnings -$8.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['non-cash expense', 'tax shield', 'operating cash flow', 'PP&E', 'retained earnings', 'three-statement link']
+  },
+  {
+    id: 'iq-fin-2',
+    role: 'Finance & Banking',
+    discipline: 'Finance',
+    category: 'Problem Solving',
+    question: 'How do you reconcile conflicting investment recommendations between Net Present Value (NPV) and Internal Rate of Return (IRR) for mutually exclusive projects?',
+    contextTip: 'Explain reinvestment rate assumptions (WACC vs IRR), differences in project scale and cash flow timing, and why NPV is theoretically superior for maximizing total shareholder wealth under capital constraints.',
+    targetDurationSeconds: 110,
+    idealKeywords: ['NPV', 'IRR', 'reinvestment rate', 'cost of capital', 'capital rationing', 'wealth maximization']
+  },
+  {
+    id: 'iq-fin-3',
+    role: 'Finance & Banking',
+    discipline: 'Finance',
+    category: 'Technical',
+    question: 'How do you calculate Unlevered Free Cash Flow in a Discounted Cash Flow (DCF) model, and how do you estimate terminal value via the Gordon Growth method?',
+    contextTip: 'State formula clearly: EBIT*(1 - Tax Rate) + D&A - CapEx - Change in Net Working Capital. Discount at WACC. Terminal Value = Final Year UFCF * (1 + g) / (WACC - g), explaining why growth rate must not exceed long-term GDP.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['unlevered free cash flow', 'WACC', 'terminal value', 'Gordon growth', 'CapEx', 'working capital']
+  },
+  {
+    id: 'iq-fin-4',
+    role: 'Finance & Banking',
+    discipline: 'Finance',
+    category: 'Leadership',
+    question: 'Describe a time you detected a material forecast anomaly or accounting variance in a division\'s budget. How did you challenge senior management constructively?',
+    contextTip: 'Use STAR structure: specify how you validated variance through ledger analysis, presented findings neutrally with scenario models, avoided accusatory language, and instituted permanent control reconciliations.',
+    targetDurationSeconds: 110,
+    idealKeywords: ['variance analysis', 'internal controls', 'materiality', 'scenario modeling', 'diplomatic communication']
+  },
+  {
+    id: 'iq-fin-5',
+    role: 'Finance & Banking',
+    discipline: 'Finance',
+    category: 'Problem Solving',
+    question: 'How would you structure a hedging strategy to protect an international operating margin against severe foreign exchange swings and rising debt interest rates?',
+    contextTip: 'Distinguish transaction from translation exposure. Explain matching foreign revenues with local currency expenses, deploying forward currency contracts, and utilizing interest rate swaps (fixed-to-floating or floating-to-fixed).',
+    targetDurationSeconds: 115,
+    idealKeywords: ['FX hedging', 'forward contracts', 'interest rate swap', 'currency risk', 'margin preservation']
+  },
+
+  // ---------------------------------------------------------------------------
+  // TEACHING & EDUCATION DISCIPLINE
+  // ---------------------------------------------------------------------------
+  {
+    id: 'iq-teach-1',
+    role: 'Teaching & Education',
+    discipline: 'Teaching',
+    category: 'Technical',
+    question: 'How do you apply differentiated instruction to design a lesson plan that challenges advanced learners while supporting struggling or neurodiverse students?',
+    contextTip: 'Detail tiered assignments, multi-modal content delivery (visual, kinesthetic, auditory), flexible grouping, and using real-time formative checkpoints (exit tickets, quick polls) to adapt pacing.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['differentiated instruction', 'scaffolding', 'formative assessment', 'multi-modal learning', 'inclusive classroom']
+  },
+  {
+    id: 'iq-teach-2',
+    role: 'Teaching & Education',
+    discipline: 'Teaching',
+    category: 'Problem Solving',
+    question: 'What is your classroom management philosophy when handling an emotionally dysregulated or persistently defiant student without derailing peer learning?',
+    contextTip: 'Emphasize proactive classroom norms, non-verbal proximity cues, privately acknowledging the student\'s feelings, offering choices to de-escalate power struggles, and implementing restorative reflection.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['de-escalation', 'restorative justice', 'trauma-informed', 'proximity control', 'emotional regulation']
+  },
+  {
+    id: 'iq-teach-3',
+    role: 'Teaching & Education',
+    discipline: 'Teaching',
+    category: 'HR / Behavioral',
+    question: 'Walk me through a time an anxious or frustrated parent disputed their child\'s assessment grade or behavioral report. How did you resolve it?',
+    contextTip: 'Use STAR: acknowledge parental dedication, anchor discussion in objective curriculum standards and a portfolio of student work samples, and build a collaborative weekly progress tracker together.',
+    targetDurationSeconds: 110,
+    idealKeywords: ['empathetic listening', 'objective rubric', 'student portfolio', 'collaborative partnership', 'growth mindset']
+  },
+  {
+    id: 'iq-teach-4',
+    role: 'Teaching & Education',
+    discipline: 'Teaching',
+    category: 'Leadership',
+    question: 'How do you integrate modern AI tools and interactive technology into your curriculum while preserving students\' independent critical thinking and ethical integrity?',
+    contextTip: 'Discuss Socratic inquiry, project-based learning with oral defense, treating AI as a brainstorming dialogue partner rather than an answer machine, and transparent citation norms.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['critical thinking', 'Socratic method', 'digital ethics', 'authentic assessment', 'inquiry-based learning']
+  },
+  {
+    id: 'iq-teach-5',
+    role: 'Teaching & Education',
+    discipline: 'Teaching',
+    category: 'Technical',
+    question: 'How do you leverage formative assessment data to adjust your instructional trajectory in real time during a challenging multi-week unit?',
+    contextTip: 'Differentiate formative vs summative. Highlight quick feedback loops (think-pair-share, digital polling), pinpointing specific conceptual bottlenecks, and re-teaching via alternative pedagogical analogies.',
+    targetDurationSeconds: 110,
+    idealKeywords: ['formative assessment', 'data-informed teaching', 'feedback loop', 'conceptual mastery', 're-teaching']
+  },
+
+  // ---------------------------------------------------------------------------
+  // CHEMICAL ENGINEERING DISCIPLINE
+  // ---------------------------------------------------------------------------
+  {
+    id: 'iq-chem-1',
+    role: 'Chemical Engineering',
+    discipline: 'Chemical',
+    category: 'Technical',
+    question: 'Walk me through the methodology of conducting a HAZOP (Hazard and Operability) review for a pressurized exothermic catalytic reactor system.',
+    contextTip: 'Explain parameter guide words (No flow, High temperature, Reverse pressure). Cover cooling jacket failure scenarios, runaway thermal dynamics, emergency quench systems, rupture disks, and SIL safety interlocks.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['HAZOP', 'exothermic runaway', 'P&ID', 'guide words', 'rupture disk', 'safety instrumented systems']
+  },
+  {
+    id: 'iq-chem-2',
+    role: 'Chemical Engineering',
+    discipline: 'Chemical',
+    category: 'Problem Solving',
+    question: 'How do you diagnose and resolve column flooding, weeping, or foaming in an industrial fractional distillation column based on differential pressure indicators?',
+    contextTip: 'Analyze delta-P: high pressure drop indicates liquid backup/flooding; abnormally low indicates weeping. Discuss adjusting vapor boilup rate, reflux ratio, tray hydraulics, feed pre-heat, and anti-foam injection.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['distillation column', 'column flooding', 'weeping', 'differential pressure', 'reflux ratio', 'tray hydraulics']
+  },
+  {
+    id: 'iq-chem-3',
+    role: 'Chemical Engineering',
+    discipline: 'Chemical',
+    category: 'Technical',
+    question: 'When scaling up a batch chemical synthesis process from 2-liter benchtop glassware to a 10,000-liter plant reactor, what transport phenomena limitations do you solve?',
+    contextTip: 'Address decreased surface-area-to-volume ratio, heat dissipation bottlenecks, mixing impeller power numbers, Reynolds/Froude scaling, mass transfer rate across phases, and local hot spots.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['scale-up', 'surface-area-to-volume', 'heat transfer coefficient', 'Reynolds number', 'mass transfer', 'residence time']
+  },
+  {
+    id: 'iq-chem-4',
+    role: 'Chemical Engineering',
+    discipline: 'Chemical',
+    category: 'Problem Solving',
+    question: 'Explain how you utilize Pinch Analysis to optimize a plant\'s Heat Exchanger Network (HEN) and reduce external utility consumption.',
+    contextTip: 'Explain hot and cold composite curves, identifying the pinch temperature (delta T min), and the core thermodynamic axiom: never transfer heat across the pinch point to avoid doubling utility penalties.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['pinch analysis', 'composite curves', 'minimum approach temperature', 'heat integration', 'energy conservation']
+  },
+  {
+    id: 'iq-chem-5',
+    role: 'Chemical Engineering',
+    discipline: 'Chemical',
+    category: 'HR / Behavioral',
+    question: 'Describe an instance where operational pressure to maintain production throughput conflicted with safety or emissions compliance. How did you act?',
+    contextTip: 'Emphasize Stop-Work Authority, unwavering Process Safety Management (PSM), gathering volatile organic compound or pressure data, briefing the plant superintendent objectively, and executing a safe controlled shutdown.',
+    targetDurationSeconds: 110,
+    idealKeywords: ['process safety management', 'stop-work authority', 'environmental compliance', 'root cause', 'integrity']
+  },
+
+  // ---------------------------------------------------------------------------
+  // MECHANICAL ENGINEERING DISCIPLINE
+  // ---------------------------------------------------------------------------
+  {
+    id: 'iq-mech-1',
+    role: 'Mechanical Engineering',
+    discipline: 'Mechanical',
+    category: 'Technical',
+    question: 'How do you evaluate multi-axial cyclic fatigue life on a structural drive component, and how do you apply the Goodman diagram and S-N fatigue curve?',
+    contextTip: 'Explain alternating vs mean stress components, Marin endurance limit factors (surface finish, size, reliability), notch sensitivity (Kf vs Kt), and determining the factor of safety against high-cycle fatigue.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['fatigue life', 'Goodman diagram', 'S-N curve', 'endurance limit', 'stress concentration', 'cyclic loading']
+  },
+  {
+    id: 'iq-mech-2',
+    role: 'Mechanical Engineering',
+    discipline: 'Mechanical',
+    category: 'Problem Solving',
+    question: 'How do you establish Geometric Dimensioning & Tolerancing (GD&T) datums and position tolerances to ensure interchangeable assembly without unnecessarily inflating machining scrap?',
+    contextTip: 'Discuss the 3-2-1 datum reference frame, selecting functional contact surfaces, applying Maximum Material Condition (MMC) bonus tolerances, and running statistical tolerance stack-up analysis (RSS vs worst-case).',
+    targetDurationSeconds: 120,
+    idealKeywords: ['GD&T', 'datum reference frame', 'maximum material condition', 'true position', 'tolerance stack-up', 'DFM']
+  },
+  {
+    id: 'iq-mech-3',
+    role: 'Mechanical Engineering',
+    discipline: 'Mechanical',
+    category: 'Technical',
+    question: 'What verification protocols do you follow to validate the convergence and physical credibility of a Finite Element Analysis (FEA) simulation before physical prototyping?',
+    contextTip: 'Detail mesh convergence studies (h vs p refinement), inspecting element aspect ratios and Jacobian, checking boundary condition realism, avoiding artificial singularities at sharp re-entrant corners, and strain gauge validation.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['FEA', 'mesh convergence', 'Von Mises stress', 'boundary conditions', 'Jacobian ratio', 'empirical validation']
+  },
+  {
+    id: 'iq-mech-4',
+    role: 'Mechanical Engineering',
+    discipline: 'Mechanical',
+    category: 'Problem Solving',
+    question: 'Walk me through how you conduct a Design Failure Mode and Effects Analysis (DFMEA) for a high-torque mechanical gearbox or robotic transmission.',
+    contextTip: 'Cover identifying failure modes (tooth bending fatigue, pitting, lubrication breakdown), scoring Severity, Occurrence, and Detection, and calculating RPN to drive preventative engineering changes.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['DFMEA', 'risk priority number', 'failure mode', 'gearbox lubrication', 'preventative redesign']
+  },
+  {
+    id: 'iq-mech-5',
+    role: 'Mechanical Engineering',
+    discipline: 'Mechanical',
+    category: 'Technical',
+    question: 'How do you size heat sinks, thermal interface materials (TIM), and forced convection airflow for an electronics enclosure dissipating 400W in a 50°C ambient environment?',
+    contextTip: 'Calculate total junction-to-ambient thermal resistance (R_theta). Select TIM thermal conductivity, compute required fin surface area, evaluate fan static pressure vs CFM operating curve, and ensure turbulent airflow across fins.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['thermal resistance', 'forced convection', 'heat sink sizing', 'static pressure', 'thermal interface material']
+  },
+
+  // ---------------------------------------------------------------------------
+  // ELECTRICAL ENGINEERING DISCIPLINE
+  // ---------------------------------------------------------------------------
+  {
+    id: 'iq-ee-1',
+    role: 'Electrical Engineering',
+    discipline: 'Electrical',
+    category: 'Technical',
+    question: 'Explain why poor power factor causes severe efficiency and capacity penalties on industrial distribution networks, and how you design an automatic capacitor bank correction system.',
+    contextTip: 'Explain real power (kW), reactive power (kVAR), apparent power (kVA), increased I^2*R copper losses, voltage sag, and sizing detuned reactors to avoid harmonic resonance with non-linear VFD loads.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['power factor correction', 'reactive power', 'kVAR', 'apparent power', 'harmonic resonance', 'copper losses']
+  },
+  {
+    id: 'iq-ee-2',
+    role: 'Electrical Engineering',
+    discipline: 'Electrical',
+    category: 'Problem Solving',
+    question: 'How do you design a biased differential protection scheme (ANSI 87T) for a large 3-phase substation transformer, and how do you prevent nuisance tripping during energization?',
+    contextTip: 'Apply Kirchhoff\'s Current Law across CT secondary loops. Explain CT ratio matching, vector group phase-shift compensation, percentage slope restraint, and 2nd harmonic restraint to filter magnetizing inrush current.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['differential protection', '87T relay', 'magnetizing inrush', '2nd harmonic restraint', 'current transformer', 'slope characteristic']
+  },
+  {
+    id: 'iq-ee-3',
+    role: 'Electrical Engineering',
+    discipline: 'Electrical',
+    category: 'Problem Solving',
+    question: 'Walk me through how you conduct an Arc Flash study according to IEEE 1584, calculate incident energy levels, and determine safe approach boundaries for maintenance crews.',
+    contextTip: 'Cover collecting one-line diagrams, calculating bolted fault currents, determining upstream relay clearing times from time-current curves (TCC), calculating cal/cm² at working distance, and establishing NFPA 70E PPE categories.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['arc flash', 'IEEE 1584', 'incident energy', 'clearing time', 'time-current curve', 'NFPA 70E PPE']
+  },
+  {
+    id: 'iq-ee-4',
+    role: 'Electrical Engineering',
+    discipline: 'Electrical',
+    category: 'Technical',
+    question: 'What electrical conditions must be satisfied before synchronizing an islanded renewable microgrid to the utility grid, and how do you protect against unintentional islanding under IEEE 1547?',
+    contextTip: 'Must match voltage magnitude, frequency, phase angle, and phase sequence (A-B-C rotation). Discuss Phase-Locked Loops (PLL), active/passive anti-islanding detection (frequency drift, ROCOF), and inverter LCL filters.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['grid synchronization', 'IEEE 1547', 'anti-islanding', 'phase-locked loop', 'ROCOF', 'phase sequence']
+  },
+  {
+    id: 'iq-ee-5',
+    role: 'Electrical Engineering',
+    discipline: 'Electrical',
+    category: 'Technical',
+    question: 'How do you calculate symmetrical and asymmetrical short-circuit fault duties to properly rate high-voltage switchgear and coordinate protective circuit breakers?',
+    contextTip: 'Explain Thevenin system impedance, subtransient (X"d) vs transient reactances, DC offset decay dictated by system X/R ratio, and ensuring switchgear symmetrical interrupting and peak making capacities exceed fault levels.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['short circuit calculation', 'Thevenin impedance', 'X/R ratio', 'asymmetrical fault current', 'switchgear rating']
+  },
+
+  // ---------------------------------------------------------------------------
+  // ELECTRONICS & COMMUNICATION DISCIPLINE
+  // ---------------------------------------------------------------------------
+  {
+    id: 'iq-ece-1',
+    role: 'Electronics & Communication',
+    discipline: 'Electronics',
+    category: 'Technical',
+    question: 'How do you handle interrupt latency, race conditions, and priority inversion in a resource-constrained embedded system running a real-time operating system (RTOS)?',
+    contextTip: 'Explain keeping ISRs minimal via deferred task processing (FreeRTOS task notifications/queues), using mutexes with Priority Inheritance protocol to prevent priority inversion, and disabling interrupts only for critical sections.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['RTOS', 'priority inversion', 'priority inheritance', 'interrupt service routine', 'race condition', 'mutex']
+  },
+  {
+    id: 'iq-ece-2',
+    role: 'Electronics & Communication',
+    discipline: 'Electronics',
+    category: 'Problem Solving',
+    question: 'What layout and routing rules do you enforce on a multilayer high-speed PCB to guarantee Signal Integrity (SI) and Power Integrity (PI) for DDR or high-speed differential pairs?',
+    contextTip: 'Detail controlled impedance stack-up (e.g. 90-ohm diff, 50-ohm single), uninterrupted ground return path planes, length matching within skew budget, placing decoupling capacitors close to BGA pins, and avoiding split planes.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['signal integrity', 'controlled impedance', 'differential pair', 'ground return path', 'power integrity', 'decoupling']
+  },
+  {
+    id: 'iq-ece-3',
+    role: 'Electronics & Communication',
+    discipline: 'Electronics',
+    category: 'Technical',
+    question: 'In Digital Signal Processing (DSP), compare FIR (Finite Impulse Response) vs IIR (Infinite Impulse Response) filters. When is an IIR filter preferable despite phase non-linearity?',
+    contextTip: 'Contrast FIR (inherent stability, strictly linear phase response, requires higher tap count/computation) with IIR (recursive feedback, can model sharp roll-off with minimal poles/zeros, low memory footprint, potential limit cycle oscillations).',
+    targetDurationSeconds: 115,
+    idealKeywords: ['FIR filter', 'IIR filter', 'linear phase', 'computational complexity', 'filter stability', 'group delay']
+  },
+  {
+    id: 'iq-ece-4',
+    role: 'Electronics & Communication',
+    discipline: 'Electronics',
+    category: 'Problem Solving',
+    question: 'Walk me through how you isolate and fix an intermittent bus freeze on an I2C sensor bus where SDA is stuck low at elevated operating temperatures.',
+    contextTip: 'Check pull-up resistor sizing relative to bus capacitance (rise time vs sink current capability), evaluate slave clock stretching timeouts, utilize a mixed-signal oscilloscope to inspect bus rise times, and implement a 9-clock master reset pulse.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['I2C bus lockup', 'clock stretching', 'pull-up sizing', 'bus capacitance', 'oscilloscope', 'slave reset']
+  },
+  {
+    id: 'iq-ece-5',
+    role: 'Electronics & Communication',
+    discipline: 'Electronics',
+    category: 'Technical',
+    question: 'How do you calculate the RF Link Budget for an IoT wireless node (e.g., LoRa or BLE), and what strategies do you deploy to combat multipath Rayleigh fading in indoor environments?',
+    contextTip: 'Break down link budget equation: Prx = Ptx + Gtx + Grx - FreeSpacePathLoss - CableLoss - FadeMargin. Discuss receiver sensitivity, antenna matching networks (Smith chart), spatial diversity, and spread-spectrum modulation.',
+    targetDurationSeconds: 120,
+    idealKeywords: ['RF link budget', 'Friis transmission', 'multipath fading', 'fade margin', 'receiver sensitivity', 'antenna matching']
   }
 ];
 

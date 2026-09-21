@@ -77,9 +77,24 @@ export interface FeedbackReport {
   presentationReview?: PresentationReview;
 }
 
+export type InterviewDiscipline = 
+  | 'All Disciplines'
+  | 'Finance'
+  | 'Teaching'
+  | 'Chemical'
+  | 'Mechanical'
+  | 'Electrical'
+  | 'Electronics'
+  | 'Software Engineering'
+  | 'Product Management'
+  | 'Leadership & Management'
+  | 'Sales & Client Relations'
+  | 'General & HR Behavioral';
+
 export interface InterviewQuestion {
   id: string;
   role: string;
+  discipline?: string;
   category: 'HR / Behavioral' | 'Technical' | 'Leadership' | 'Problem Solving';
   question: string;
   contextTip: string;

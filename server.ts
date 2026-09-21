@@ -880,6 +880,71 @@ Avoid long-winded lectures; give actionable, bite-sized drills and clear vocal t
   }
 });
 
+// 5b. Generate AI Interview Question for any discipline
+app.post('/api/interview/generate-question', async (req: Request, res: Response) => {
+  const { discipline, category, focusTopic } = req.body || {};
+  const activeDiscipline = discipline || 'Finance';
+  const activeCategory = category || 'Technical';
+
+  const ai = getGemini();
+  if (ai) {
+    try {
+      const prompt = `You are a premier industry hiring director and technical interviewer specializing in "${activeDiscipline}".
+Generate an authentic, high-impact interview question for a candidate in the "${activeDiscipline}" discipline.
+${focusTopic ? `Specific Topic / Focus Area: ${focusTopic}` : ''}
+${category && category !== 'All' ? `Question Category: ${category}` : 'Category: Technical or Problem Solving'}
+
+Strictly return a single valid JSON object adhering to this schema:
+{
+  "role": "${activeDiscipline}",
+  "discipline": "${activeDiscipline}",
+  "category": "Technical" | "Problem Solving" | "HR / Behavioral" | "Leadership",
+  "question": string (realistic, sharp, challenging interview inquiry),
+  "contextTip": string (2-3 sentences of coach advice detailing what frameworks, technical metrics, or STAR steps make a stellar answer),
+  "targetDurationSeconds": number (between 90 and 130),
+  "idealKeywords": string[] (4 to 6 domain-specific technical terms, methodologies, or frameworks)
+}`;
+
+      const response = await generateContentWithModelFallback(ai, {
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+        },
+      });
+
+      const parsed = parseJsonSafely(response.text);
+      if (parsed && parsed.question) {
+        return res.json({
+          id: `iq-gen-${Date.now()}`,
+          role: parsed.role || activeDiscipline,
+          discipline: parsed.discipline || activeDiscipline,
+          category: parsed.category || activeCategory,
+          question: parsed.question,
+          contextTip: parsed.contextTip || 'Structure your answer clearly with the STAR framework and relevant domain principles.',
+          targetDurationSeconds: parsed.targetDurationSeconds || 115,
+          idealKeywords: Array.isArray(parsed.idealKeywords) && parsed.idealKeywords.length > 0 
+            ? parsed.idealKeywords 
+            : ['methodology', 'analytical rigor', 'impact', 'domain mastery']
+        });
+      }
+    } catch (e: any) {
+      console.warn('AI interview question generation fallback:', e?.message || e);
+    }
+  }
+
+  // Fallback dynamic question generator
+  res.json({
+    id: `iq-gen-${Date.now()}`,
+    role: activeDiscipline,
+    discipline: activeDiscipline,
+    category: activeCategory,
+    question: `In your work within ${activeDiscipline}, describe a complex technical or operational hurdle you encountered. What diagnostic principles did you apply, and what quantifiable outcome did you deliver?`,
+    contextTip: 'Use the STAR format (Situation, Task, Action, Result). Explicitly highlight your domain problem-solving methodology and the resulting efficiency, safety, or fiscal benefit.',
+    targetDurationSeconds: 115,
+    idealKeywords: ['methodology', 'root cause analysis', 'operational impact', 'cross-functional collaboration', 'optimization']
+  });
+});
+
 // 6. Practice Sessions storage endpoints
 app.get('/api/sessions', (req: Request, res: Response) => {
   res.json(sessionStore);
