@@ -42,7 +42,7 @@ export default function App() {
   
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  const handleOpenAuth = (_mode?: 'signin' | 'signup') => {
+  const handleOpenAuth = () => {
     setAuthModalOpen(true);
   };
   

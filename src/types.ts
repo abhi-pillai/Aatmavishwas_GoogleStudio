@@ -91,10 +91,19 @@ export type InterviewDiscipline =
   | 'Sales & Client Relations'
   | 'General & HR Behavioral';
 
+export type ExperienceLevel = 
+  | 'All Levels'
+  | 'Fresher'
+  | '0-2 yrs'
+  | '3-5 yrs'
+  | 'Senior'
+  | 'Lead / Executive';
+
 export interface InterviewQuestion {
   id: string;
   role: string;
   discipline?: string;
+  experienceLevel?: 'Fresher' | '0-2 yrs' | '3-5 yrs' | 'Senior' | 'Lead / Executive';
   category: 'HR / Behavioral' | 'Technical' | 'Leadership' | 'Problem Solving';
   question: string;
   contextTip: string;

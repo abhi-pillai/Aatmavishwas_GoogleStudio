@@ -12,7 +12,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 
 interface UserMenuProps {
-  onOpenAuth: (mode: 'signin' | 'signup') => void;
+  onOpenAuth: () => void;
 }
 
 export const UserMenu: React.FC<UserMenuProps> = ({ onOpenAuth }) => {
@@ -43,7 +43,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onOpenAuth }) => {
     return (
       <button
         id="nav-signin-btn"
-        onClick={() => onOpenAuth('signin')}
+        onClick={() => onOpenAuth()}
         className="px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl transition flex items-center gap-2 shadow-sm cursor-pointer active:scale-95"
       >
         <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">

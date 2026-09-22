@@ -39,7 +39,7 @@ import {
   createWavUrlFromPcm,
   transcribeAudioWithAI 
 } from '../utils/audioUtils';
-import { InterviewQuestion, FeedbackReport } from '../types';
+import { InterviewQuestion, FeedbackReport, ExperienceLevel } from '../types';
 
 interface InterviewPracticeProps {
   onSessionComplete: (report: FeedbackReport, audioUrl?: string) => void;
@@ -179,9 +179,80 @@ export const DISCIPLINES: DisciplineMeta[] = [
   }
 ];
 
+export interface ExperienceLevelOption {
+  id: ExperienceLevel;
+  label: string;
+  shortLabel: string;
+  badgeClass: string;
+  description: string;
+}
+
+export const EXPERIENCE_LEVEL_OPTIONS: ExperienceLevelOption[] = [
+  {
+    id: 'All Levels',
+    label: 'All Levels',
+    shortLabel: 'All Levels',
+    badgeClass: 'text-slate-300 bg-slate-800 border-slate-700',
+    description: 'Comprehensive spectrum across all career tiers'
+  },
+  {
+    id: 'Fresher',
+    label: 'Fresher (College / Graduate)',
+    shortLabel: 'Fresher',
+    badgeClass: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+    description: 'Core concepts, capstones, academic rigor & learning agility'
+  },
+  {
+    id: '0-2 yrs',
+    label: '0-2 yrs (Junior)',
+    shortLabel: '0-2 yrs',
+    badgeClass: 'text-sky-400 bg-sky-500/10 border-sky-500/30',
+    description: 'Sprint delivery, hands-on production troubleshooting & team standards'
+  },
+  {
+    id: '3-5 yrs',
+    label: '3-5 yrs (Mid-Level)',
+    shortLabel: '3-5 yrs',
+    badgeClass: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30',
+    description: 'End-to-end feature ownership, trade-off analysis & performance optimization'
+  },
+  {
+    id: 'Senior',
+    label: 'Senior (5-8+ yrs)',
+    shortLabel: 'Senior',
+    badgeClass: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+    description: 'System / plant architecture, high-stakes trade-offs, reliability & mentorship'
+  },
+  {
+    id: 'Lead / Executive',
+    label: 'Lead / Executive',
+    shortLabel: 'Lead / Exec',
+    badgeClass: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+    description: 'Strategic vision, organizational leadership & crisis governance'
+  }
+];
+
+export const getExperienceBadgeClass = (level?: string) => {
+  switch (level) {
+    case 'Fresher':
+      return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
+    case '0-2 yrs':
+      return 'text-sky-400 bg-sky-500/10 border-sky-500/30';
+    case '3-5 yrs':
+      return 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30';
+    case 'Senior':
+      return 'text-amber-400 bg-amber-500/10 border-amber-500/30';
+    case 'Lead / Executive':
+      return 'text-purple-400 bg-purple-500/10 border-purple-500/30';
+    default:
+      return 'text-slate-400 bg-slate-800 border-slate-700';
+  }
+};
+
 export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionComplete }) => {
   const [allQuestions, setAllQuestions] = useState<InterviewQuestion[]>(INTERVIEW_QUESTIONS);
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('All Disciplines');
+  const [selectedExperienceLevel, setSelectedExperienceLevel] = useState<ExperienceLevel>('All Levels');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
@@ -192,6 +263,7 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
   // AI Dynamic Generation state
   const [showAIGenDrawer, setShowAIGenDrawer] = useState(false);
   const [aiFocusTopic, setAiFocusTopic] = useState('');
+  const [aiExperienceLevel, setAiExperienceLevel] = useState<ExperienceLevel>('0-2 yrs');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const [isRecording, setIsRecording] = useState(false);
@@ -210,7 +282,7 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
   const recognizerRef = useRef<any>(null);
   const timerIntervalRef = useRef<any>(null);
 
-  // Filter questions based on discipline, category, and search query
+  // Filter questions based on discipline, experience level, category, and search query
   const filteredQuestions = allQuestions.filter((q) => {
     // Discipline filter
     const matchesDiscipline = selectedDiscipline === 'All Disciplines' ||
@@ -223,6 +295,10 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
       (selectedDiscipline === 'Electrical' && (q.discipline === 'Electrical' || q.role.toLowerCase().includes('electrical'))) ||
       (selectedDiscipline === 'Electronics' && (q.discipline === 'Electronics' || q.role.toLowerCase().includes('electronic')));
 
+    // Experience level filter
+    const matchesLevel = selectedExperienceLevel === 'All Levels' ||
+      q.experienceLevel === selectedExperienceLevel;
+
     // Category filter
     const matchesCategory = selectedCategory === 'All' || q.category === selectedCategory;
 
@@ -231,9 +307,10 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
       q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
       q.contextTip.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (q.discipline && q.discipline.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (q.experienceLevel && q.experienceLevel.toLowerCase().includes(searchQuery.toLowerCase())) ||
       q.idealKeywords.some(k => k.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchesDiscipline && matchesCategory && matchesSearch;
+    return matchesDiscipline && matchesLevel && matchesCategory && matchesSearch;
   });
 
   // Current active discipline object
@@ -248,28 +325,59 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
       setCurrentQuestion(picked);
       setTranscript('');
       setRecordingTime(0);
-      setStatusNotice(`Switched question: "${picked.question.slice(0, 50)}..."`);
+      setStatusNotice(`Switched question [${picked.experienceLevel || 'All Levels'}]: "${picked.question.slice(0, 50)}..."`);
     }
   };
 
   const handleSelectDiscipline = (dispName: string) => {
     setSelectedDiscipline(dispName);
     setIsCustomMode(false);
-    // Find first question matching the discipline if current question doesn't match
-    const matching = allQuestions.filter(q => 
-      dispName === 'All Disciplines' || 
-      q.discipline === dispName || 
-      q.role.toLowerCase().includes(dispName.toLowerCase())
-    );
+    // Find first question matching the discipline and current experience level if possible
+    const matchingWithLevel = allQuestions.filter(q => {
+      const matchDisp = dispName === 'All Disciplines' || 
+        q.discipline === dispName || 
+        q.role.toLowerCase().includes(dispName.toLowerCase());
+      const matchLvl = selectedExperienceLevel === 'All Levels' || q.experienceLevel === selectedExperienceLevel;
+      return matchDisp && matchLvl;
+    });
+
+    if (matchingWithLevel.length > 0 && !matchingWithLevel.some(q => q.id === currentQuestion.id)) {
+      setCurrentQuestion(matchingWithLevel[0]);
+    } else if (matchingWithLevel.length === 0) {
+      const matchingAny = allQuestions.filter(q => 
+        dispName === 'All Disciplines' || 
+        q.discipline === dispName || 
+        q.role.toLowerCase().includes(dispName.toLowerCase())
+      );
+      if (matchingAny.length > 0 && !matchingAny.some(q => q.id === currentQuestion.id)) {
+        setCurrentQuestion(matchingAny[0]);
+      }
+    }
+  };
+
+  const handleSelectExperienceLevel = (level: ExperienceLevel) => {
+    setSelectedExperienceLevel(level);
+    setIsCustomMode(false);
+    
+    // Auto-select a question matching both discipline and new level if current doesn't match
+    const matching = allQuestions.filter(q => {
+      const matchDisp = selectedDiscipline === 'All Disciplines' || 
+        q.discipline === selectedDiscipline || 
+        q.role.toLowerCase().includes(selectedDiscipline.toLowerCase());
+      const matchLvl = level === 'All Levels' || q.experienceLevel === level;
+      return matchDisp && matchLvl;
+    });
+
     if (matching.length > 0 && !matching.some(q => q.id === currentQuestion.id)) {
       setCurrentQuestion(matching[0]);
     }
   };
 
-  const handleGenerateAIQuestion = async (customFocus?: string) => {
+  const handleGenerateAIQuestion = async (customFocus?: string, customLevel?: ExperienceLevel) => {
     setIsGeneratingAI(true);
     setStatusNotice(null);
     const targetDiscipline = selectedDiscipline === 'All Disciplines' ? 'Finance' : selectedDiscipline;
+    const targetLevel = (customLevel || aiExperienceLevel || (selectedExperienceLevel !== 'All Levels' ? selectedExperienceLevel : '0-2 yrs')) as string;
     const focus = customFocus !== undefined ? customFocus : aiFocusTopic;
 
     try {
@@ -279,7 +387,8 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
         body: JSON.stringify({
           discipline: targetDiscipline,
           category: selectedCategory !== 'All' ? selectedCategory : 'Technical',
-          focusTopic: focus.trim() || undefined
+          focusTopic: focus.trim() || undefined,
+          experienceLevel: targetLevel
         })
       });
 
@@ -292,7 +401,7 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
         setIsCustomMode(false);
         setShowAIGenDrawer(false);
         setAiFocusTopic('');
-        setStatusNotice(`Generated new ${generatedQ.discipline || targetDiscipline} question with Gemini AI!`);
+        setStatusNotice(`Generated new ${generatedQ.discipline || targetDiscipline} (${generatedQ.experienceLevel || targetLevel}) question with Gemini AI!`);
       }
     } catch (err: any) {
       console.warn('AI question generation notice:', err);
@@ -467,6 +576,7 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
     setIsAnalyzing(true);
     const activeQ = isCustomMode ? customQuestion : currentQuestion.question;
     const activeDisciplineLabel = currentQuestion.discipline || (selectedDiscipline !== 'All Disciplines' ? selectedDiscipline : currentQuestion.role);
+    const activeLevelLabel = currentQuestion.experienceLevel || (selectedExperienceLevel !== 'All Levels' ? selectedExperienceLevel : '0-2 yrs');
 
     try {
       const res = await fetch('/api/analyze-speech', {
@@ -476,9 +586,10 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
           transcript: activeTranscript,
           durationSeconds: Math.max(10, recordingTime),
           sessionType: 'interview',
-          title: `Interview [${activeDisciplineLabel}]: ${activeQ.slice(0, 40)}...`,
+          title: `Interview [${activeDisciplineLabel} - ${activeLevelLabel}]: ${activeQ.slice(0, 35)}...`,
           questionContext: activeQ,
           role: activeDisciplineLabel,
+          experienceLevel: activeLevelLabel,
         }),
       });
 
@@ -615,7 +726,7 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold text-indigo-300 uppercase tracking-wider">
               <Wand2 className="w-4 h-4 text-indigo-400" />
-              <span>Gemini AI Question Studio — {selectedDiscipline === 'All Disciplines' ? 'Finance & Engineering' : selectedDiscipline}</span>
+              <span>Gemini AI Question Studio — {selectedDiscipline === 'All Disciplines' ? 'Multi-Disciplinary' : selectedDiscipline}</span>
             </div>
             <button
               onClick={() => setShowAIGenDrawer(false)}
@@ -626,12 +737,44 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
           </div>
 
           <p className="text-xs text-slate-300">
-            Generate an authentic, specialized interview question for <strong className="text-white">{selectedDiscipline === 'All Disciplines' ? 'any chosen discipline' : selectedDiscipline}</strong> on demand.
+            Generate an authentic, specialized interview inquiry calibrated for <strong className="text-white">{selectedDiscipline === 'All Disciplines' ? 'your field' : selectedDiscipline}</strong> and tailored to your specific seniority level.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
+                <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
+                Target Seniority Level:
+              </label>
+              <select
+                id="ai-level-select"
+                value={aiExperienceLevel}
+                onChange={(e) => setAiExperienceLevel(e.target.value as ExperienceLevel)}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value="Fresher">Fresher (Academic coursework, capstones & fundamentals)</option>
+                <option value="0-2 yrs">0-2 yrs (Junior production troubleshooting & sprint execution)</option>
+                <option value="3-5 yrs">3-5 yrs (Mid-level feature ownership & trade-offs)</option>
+                <option value="Senior">Senior (5-8+ yrs architecture, reliability & trade-offs)</option>
+                <option value="Lead / Executive">Lead / Executive (Strategic vision, org culture & governance)</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5 text-sky-400" />
+                Target Discipline:
+              </label>
+              <div className="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-indigo-300 font-semibold truncate">
+                {selectedDiscipline === 'All Disciplines' ? 'Universal / Cross-Discipline' : selectedDiscipline}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
             <input
               type="text"
+              id="ai-focus-topic-input"
               placeholder={`Optional specific topic (e.g. ${
                 selectedDiscipline.includes('Finance') ? 'WACC & Debt Structuring, DCF multiples' :
                 selectedDiscipline.includes('Teaching') ? 'Classroom De-escalation, Neurodiversity' :
@@ -649,7 +792,7 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
               id="submit-ai-question-gen-btn"
               onClick={() => handleGenerateAIQuestion()}
               disabled={isGeneratingAI}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shrink-0"
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-95"
             >
               {isGeneratingAI ? (
                 <>
@@ -707,6 +850,64 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
                 }`}>
                   {count}
                 </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Experience Level Filter Bar */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs text-slate-400 font-semibold px-1">
+          <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+            <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
+            Experience Level Calibration
+          </span>
+          <span className="text-[11px] text-slate-400">
+            {filteredQuestions.length} {filteredQuestions.length === 1 ? 'question' : 'questions'} matching <span className="text-white font-semibold">{selectedExperienceLevel}</span>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          {EXPERIENCE_LEVEL_OPTIONS.map((lvl) => {
+            const isSelected = selectedExperienceLevel === lvl.id;
+            const count = allQuestions.filter(q => {
+              const matchDisp = selectedDiscipline === 'All Disciplines' || 
+                q.discipline === selectedDiscipline || 
+                q.role.toLowerCase().includes(selectedDiscipline.toLowerCase());
+              const matchLvl = lvl.id === 'All Levels' || q.experienceLevel === lvl.id;
+              return matchDisp && matchLvl;
+            }).length;
+
+            return (
+              <button
+                key={lvl.id}
+                id={`level-filter-btn-${lvl.id.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                onClick={() => handleSelectExperienceLevel(lvl.id)}
+                className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer active:scale-98 ${
+                  isSelected
+                    ? 'bg-slate-900 border-sky-500 ring-1 ring-sky-500/50 shadow-md shadow-sky-500/10'
+                    : 'bg-slate-950/60 hover:bg-slate-900/80 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1 w-full mb-1">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                    isSelected ? lvl.badgeClass : 'text-slate-400 bg-slate-900 border-slate-800'
+                  }`}>
+                    {lvl.shortLabel}
+                  </span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    isSelected ? 'bg-sky-500/20 text-sky-300' : 'bg-slate-900 text-slate-500'
+                  }`}>
+                    {count}
+                  </span>
+                </div>
+                <div className="text-[11px] font-semibold text-white truncate">
+                  {lvl.id === 'All Levels' ? 'All Seniorities' : lvl.id}
+                </div>
+                <div className="text-[9px] text-slate-400 line-clamp-1 mt-0.5">
+                  {lvl.description}
+                </div>
               </button>
             );
           })}
@@ -838,17 +1039,22 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1 mb-1.5">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-sky-300 border border-slate-700">
                               {q.category}
                             </span>
+                            {q.experienceLevel && (
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${getExperienceBadgeClass(q.experienceLevel)}`}>
+                                {q.experienceLevel}
+                              </span>
+                            )}
                             {q.discipline && (
                               <span className="text-[9px] font-medium text-slate-400 px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">
                                 {q.discipline}
                               </span>
                             )}
                           </div>
-                          {isSelected && <span className="text-[9px] font-bold text-sky-400">Active</span>}
+                          {isSelected && <span className="text-[9px] font-bold text-sky-400 shrink-0">Active</span>}
                         </div>
                         <p className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed">
                           {q.question}
@@ -882,11 +1088,16 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ onSessionC
             {/* Interviewer Question Prompter */}
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Target className="w-3.5 h-3.5" />
                     Interviewer Prompt
                   </span>
+                  {!isCustomMode && currentQuestion.experienceLevel && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${getExperienceBadgeClass(currentQuestion.experienceLevel)}`}>
+                      {currentQuestion.experienceLevel}
+                    </span>
+                  )}
                   {!isCustomMode && currentQuestion.discipline && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 font-semibold border border-sky-800/60">
                       {currentQuestion.discipline}

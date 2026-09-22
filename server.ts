@@ -399,6 +399,7 @@ app.post('/api/analyze-speech', async (req: Request, res: Response) => {
       title = 'Speech Practice Session',
       role,
       questionContext,
+      experienceLevel,
       slides,
       slideTimings,
       deckTitle
@@ -443,7 +444,7 @@ Transcript: "${transcript}"
 Session Type: "${sessionType}"
 Duration: ${durationSeconds} seconds
 Speaking Speed: ${calculatedWpm} WPM (Words Per Minute)
-Title/Context: "${title}" ${questionContext ? `Question Context: ${questionContext}` : ''} ${role ? `Role: ${role}` : ''}
+Title/Context: "${title}" ${questionContext ? `Question Context: ${questionContext}` : ''} ${role ? `Role: ${role}` : ''} ${experienceLevel ? `Candidate Experience Level: ${experienceLevel} (Calibrate evaluation expectations: Freshers on foundational fundamentals, learning agility, and structured thinking; 0-2 yrs on practical execution, debugging, and tooling; Seniors on architecture, strategic trade-offs, leadership, and business impact)` : ''}
 ${presentationContextText}
 
 Provide a deep, constructive, structured analysis.
@@ -882,26 +883,36 @@ Avoid long-winded lectures; give actionable, bite-sized drills and clear vocal t
 
 // 5b. Generate AI Interview Question for any discipline
 app.post('/api/interview/generate-question', async (req: Request, res: Response) => {
-  const { discipline, category, focusTopic } = req.body || {};
+  const { discipline, category, focusTopic, experienceLevel } = req.body || {};
   const activeDiscipline = discipline || 'Finance';
   const activeCategory = category || 'Technical';
+  const activeLevel = experienceLevel || '0-2 yrs';
 
   const ai = getGemini();
   if (ai) {
     try {
       const prompt = `You are a premier industry hiring director and technical interviewer specializing in "${activeDiscipline}".
-Generate an authentic, high-impact interview question for a candidate in the "${activeDiscipline}" discipline.
+Generate an authentic, high-impact interview question specifically calibrated for a "${activeLevel}" candidate in the "${activeDiscipline}" discipline.
+Candidate Experience Level: "${activeLevel}".
 ${focusTopic ? `Specific Topic / Focus Area: ${focusTopic}` : ''}
 ${category && category !== 'All' ? `Question Category: ${category}` : 'Category: Technical or Problem Solving'}
+
+EXPERIENCE LEVEL CALIBRATION:
+- "Fresher": Focus on academic coursework, fundamental conceptual definitions, capstone projects, lab simulations, internships, learning aptitude, and structured problem-solving foundations.
+- "0-2 yrs": Focus on real-world execution, debugging, resolving sprint tickets, production tools, testing, peer code reviews, and adapting to industry engineering or business standards.
+- "3-5 yrs": Focus on end-to-end feature ownership, trade-offs, architecture choices, cross-functional collaboration, performance optimizations, and mentoring.
+- "Senior": Focus on large-scale system or plant architecture, high-stakes trade-offs, fault tolerance, reliability, technical debt triage, cross-team technical leadership, and quantifiable business ROI.
+- "Lead / Executive": Focus on organizational strategy, team building, engineering culture, cross-department alignment, crisis management, and long-term vision.
 
 Strictly return a single valid JSON object adhering to this schema:
 {
   "role": "${activeDiscipline}",
   "discipline": "${activeDiscipline}",
+  "experienceLevel": "${activeLevel}",
   "category": "Technical" | "Problem Solving" | "HR / Behavioral" | "Leadership",
-  "question": string (realistic, sharp, challenging interview inquiry),
-  "contextTip": string (2-3 sentences of coach advice detailing what frameworks, technical metrics, or STAR steps make a stellar answer),
-  "targetDurationSeconds": number (between 90 and 130),
+  "question": string (realistic, sharp, challenging interview inquiry tailored to ${activeLevel}),
+  "contextTip": string (2-3 sentences of coach advice detailing what frameworks, technical metrics, or STAR steps make a stellar answer for a ${activeLevel} candidate),
+  "targetDurationSeconds": number (between 80 and 130),
   "idealKeywords": string[] (4 to 6 domain-specific technical terms, methodologies, or frameworks)
 }`;
 
@@ -918,10 +929,11 @@ Strictly return a single valid JSON object adhering to this schema:
           id: `iq-gen-${Date.now()}`,
           role: parsed.role || activeDiscipline,
           discipline: parsed.discipline || activeDiscipline,
+          experienceLevel: parsed.experienceLevel || activeLevel,
           category: parsed.category || activeCategory,
           question: parsed.question,
           contextTip: parsed.contextTip || 'Structure your answer clearly with the STAR framework and relevant domain principles.',
-          targetDurationSeconds: parsed.targetDurationSeconds || 115,
+          targetDurationSeconds: parsed.targetDurationSeconds || 110,
           idealKeywords: Array.isArray(parsed.idealKeywords) && parsed.idealKeywords.length > 0 
             ? parsed.idealKeywords 
             : ['methodology', 'analytical rigor', 'impact', 'domain mastery']
@@ -933,14 +945,23 @@ Strictly return a single valid JSON object adhering to this schema:
   }
 
   // Fallback dynamic question generator
+  const fallbackByLevel: Record<string, string> = {
+    'Fresher': `In your academic coursework or capstone project in ${activeDiscipline}, describe a foundational concept or calculation you implemented. How did you verify your theoretical assumptions, and what did you learn from unexpected results?`,
+    '0-2 yrs': `During your first years working in ${activeDiscipline}, describe a challenging technical task or bug you were assigned. What diagnostic steps did you take to troubleshoot, and how did you seek feedback from senior teammates?`,
+    '3-5 yrs': `In your work within ${activeDiscipline}, describe a complex feature or process you owned end-to-end. How did you balance competing trade-offs between speed, cost, and reliability?`,
+    'Senior': `As a senior practitioner in ${activeDiscipline}, describe an architectural or operational crisis that risked system reliability or business margin. What systemic mitigation did you lead, and what permanent safeguard was established?`,
+    'Lead / Executive': `Describe a strategic initiative in ${activeDiscipline} where you aligned divergent cross-functional stakeholders, restored team morale, and established higher engineering standards.`
+  };
+
   res.json({
     id: `iq-gen-${Date.now()}`,
     role: activeDiscipline,
     discipline: activeDiscipline,
+    experienceLevel: activeLevel,
     category: activeCategory,
-    question: `In your work within ${activeDiscipline}, describe a complex technical or operational hurdle you encountered. What diagnostic principles did you apply, and what quantifiable outcome did you deliver?`,
-    contextTip: 'Use the STAR format (Situation, Task, Action, Result). Explicitly highlight your domain problem-solving methodology and the resulting efficiency, safety, or fiscal benefit.',
-    targetDurationSeconds: 115,
+    question: fallbackByLevel[activeLevel] || fallbackByLevel['0-2 yrs'],
+    contextTip: 'Use the STAR format (Situation, Task, Action, Result). Highlight your specific domain problem-solving methodology, metrics, and measurable outcome.',
+    targetDurationSeconds: 110,
     idealKeywords: ['methodology', 'root cause analysis', 'operational impact', 'cross-functional collaboration', 'optimization']
   });
 });
