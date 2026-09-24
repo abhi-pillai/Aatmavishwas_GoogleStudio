@@ -640,7 +640,7 @@ export function createSpeechRecognizer(
 }
 
 // Safe client-side text-to-speech fallback
-export function speakTextWithBrowser(text: string, onEnd?: () => void) {
+export function speakTextWithBrowser(text: string, onEnd?: () => void, rate = 0.95) {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     if (onEnd) onEnd();
     return;
@@ -649,7 +649,7 @@ export function speakTextWithBrowser(text: string, onEnd?: () => void) {
   try {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
+    utterance.rate = rate;
     utterance.pitch = 1.0;
     if (onEnd) {
       utterance.onend = onEnd;

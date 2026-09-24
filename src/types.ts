@@ -111,6 +111,45 @@ export interface InterviewQuestion {
   idealKeywords: string[];
 }
 
+export interface InterviewClarification {
+  plainEnglishSummary: string;
+  interviewerIntent: string;
+  levelSpecificAdvice: string;
+  keyPointsToCover: string[];
+  pitfallsToAvoid: string[];
+  suggestedOpening: string;
+}
+
+export interface InterviewerPersona {
+  id: string;
+  name: string;
+  role: string;
+  voice: 'Kore' | 'Puck' | 'Fenrir' | 'Aoede';
+  style: string;
+  avatarSeed: string;
+  welcomeMessage: string;
+}
+
+export interface MockSessionState {
+  isActive: boolean;
+  questionIndex: number;
+  totalQuestions: number;
+  questions: InterviewQuestion[];
+  completedAnswers: Array<{
+    question: InterviewQuestion;
+    transcript: string;
+    durationSeconds: number;
+    report?: FeedbackReport;
+  }>;
+  overallDebrief?: {
+    recommendation: 'Strong Hire' | 'Hire' | 'Borderline / Needs Polish' | 'Not Ready';
+    summary: string;
+    averageScore: number;
+    keyStrengths: string[];
+    priorityImprovements: string[];
+  };
+}
+
 export interface GDParticipant {
   id: string;
   name: string;

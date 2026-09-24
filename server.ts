@@ -966,6 +966,200 @@ Strictly return a single valid JSON object adhering to this schema:
   });
 });
 
+// 5c. Explain / Clarify Interview Question in Plain English
+app.post('/api/interview/clarify', async (req: Request, res: Response) => {
+  try {
+    const { question, discipline, experienceLevel, category } = req.body || {};
+    if (!question) {
+      return res.status(400).json({ error: 'Question is required' });
+    }
+
+    const activeDiscipline = discipline || 'General';
+    const activeLevel = experienceLevel || '0-2 yrs';
+    const ai = getGemini();
+
+    if (ai) {
+      const prompt = `You are a world-class executive hiring coach and technical bar-raiser.
+A candidate needs to understand this interview question clearly:
+Question: "${question}"
+Discipline: "${activeDiscipline}"
+Target Experience Level: "${activeLevel}"
+Category: "${category || 'Interview'}"
+
+Explain what this question really means in plain, accessible English so the user understands every aspect without feeling overwhelmed or confused by technical or corporate jargon.
+Also provide actionable advice tailored specifically to their experience level (${activeLevel}).
+
+Respond ONLY with valid JSON strictly adhering to this schema:
+{
+  "plainEnglishSummary": string (1-2 clear, approachable sentences explaining what the question is asking in simple terms),
+  "interviewerIntent": string (what the interviewer is secretly testing for: e.g. problem-solving under pressure, systematic root cause analysis, or business judgment),
+  "levelSpecificAdvice": string (specific expectations for a ${activeLevel} candidate - e.g. what depth, ownership, or terminology to emphasize),
+  "keyPointsToCover": string[] (3-4 bullet points outlining exactly what to mention in the answer),
+  "pitfallsToAvoid": string[] (2 common mistakes or red flags candidates make on this question),
+  "suggestedOpening": string (a natural, confident 1-sentence opening line the candidate can use to start speaking)
+}`;
+
+      try {
+        const response = await generateContentWithModelFallback(ai, {
+          contents: prompt,
+          config: { responseMimeType: 'application/json' },
+        });
+
+        const parsed = parseJsonSafely(response.text);
+        if (parsed && parsed.plainEnglishSummary) {
+          return res.json(parsed);
+        }
+      } catch (err: any) {
+        console.warn('AI question clarification notice:', err?.message || err);
+      }
+    }
+
+    // High availability fallback clarification
+    res.json({
+      plainEnglishSummary: `The interviewer wants to see how you approach real-world challenges in ${activeDiscipline}. They want a step-by-step example of a situation you handled from beginning to end.`,
+      interviewerIntent: `Testing your practical problem-solving logic, communication clarity, and how you evaluate trade-offs under real operational constraints.`,
+      levelSpecificAdvice: activeLevel === 'Fresher' 
+        ? 'As a Fresher, emphasize your strong grasp of core fundamentals, your academic or project methodology, and eagerness to learn from seniors.'
+        : activeLevel === '0-2 yrs'
+        ? 'For 0-2 yrs, focus on how you independently executed the task, solved blockers, verified your fix, and communicated progress.'
+        : 'Highlight your architectural thinking, risk mitigation, mentoring, and measurable business or system metrics.',
+      keyPointsToCover: [
+        'Set the baseline: Briefly state the initial situation and what went wrong or needed improvement.',
+        'Define your ownership: Clearly state your exact responsibility (use "I", not just "we").',
+        'Walk through your action: Detail the analytical or technical steps you took to diagnose and resolve it.',
+        'Quantify the outcome: Conclude with the tangible result (e.g. % improvement, time saved, or lessons learned).'
+      ],
+      pitfallsToAvoid: [
+        'Speaking too generically without a concrete, real example or specific numbers.',
+        'Spending 80% of your time explaining the problem rather than the actions you took.'
+      ],
+      suggestedOpening: `In my experience dealing with this, a prime example was when our team needed to resolve...`
+    });
+  } catch (error: any) {
+    console.error('Clarify endpoint error:', error);
+    res.status(500).json({ error: error.message || 'Failed to clarify question' });
+  }
+});
+
+// 5d. Ask Interviewer for Clarification (Candidate -> AI Interviewer dialogue)
+app.post('/api/interview/ask-interviewer', async (req: Request, res: Response) => {
+  try {
+    const { question, candidateInquiry, discipline, personaName, experienceLevel } = req.body || {};
+    if (!question || !candidateInquiry) {
+      return res.status(400).json({ error: 'Question and inquiry are required' });
+    }
+
+    const ai = getGemini();
+    const activePersona = personaName || 'Elena Rostova, Senior Hiring Director';
+    const activeLevel = experienceLevel || 'All Levels';
+
+    if (ai) {
+      const prompt = `You are roleplaying as the interviewer: ${activePersona}.
+You have just asked the candidate this interview question:
+"${question}"
+The candidate is interviewing for a ${discipline || 'Professional'} role at the "${activeLevel}" seniority level.
+
+The candidate is asking you for clarification:
+"${candidateInquiry}"
+
+Respond directly to the candidate as the interviewer:
+- Maintain a warm, encouraging, yet professional and realistic interview tone.
+- Give a direct, helpful 2 to 3 sentence answer that clarifies the scope or gives them permission to make reasonable assumptions.
+- End by warmly inviting them to proceed with their answer (e.g. "Feel free to share an example from your past work or walk through your theoretical approach.").
+- Return ONLY valid JSON: { "reply": string }`;
+
+      try {
+        const response = await generateContentWithModelFallback(ai, {
+          contents: prompt,
+          config: { responseMimeType: 'application/json' },
+        });
+
+        const parsed = parseJsonSafely(response.text);
+        if (parsed && parsed.reply) {
+          return res.json({ reply: parsed.reply });
+        }
+      } catch (err: any) {
+        console.warn('Ask interviewer error:', err?.message || err);
+      }
+    }
+
+    res.json({
+      reply: `That's a very fair question to ask! For our discussion, feel free to pick any representative project or scenario you've worked on, and state any technical assumptions you are making before diving into the details. Whenever you're ready, I'd love to hear your approach.`
+    });
+  } catch (error: any) {
+    console.error('Ask interviewer endpoint error:', error);
+    res.status(500).json({ error: error.message || 'Interviewer service error' });
+  }
+});
+
+// 5e. Polish & Synthesize Candidate's STAR Notes into a natural spoken answer
+app.post('/api/interview/polish-answer', async (req: Request, res: Response) => {
+  try {
+    const { question, starNotes, rawNotes, experienceLevel } = req.body || {};
+    const ai = getGemini();
+
+    const notesSummary = [
+      starNotes?.situation ? `Situation: ${starNotes.situation}` : '',
+      starNotes?.task ? `Task: ${starNotes.task}` : '',
+      starNotes?.action ? `Action: ${starNotes.action}` : '',
+      starNotes?.result ? `Result: ${starNotes.result}` : '',
+      rawNotes ? `Rough notes: ${rawNotes}` : ''
+    ].filter(Boolean).join('\n');
+
+    if (!notesSummary.trim()) {
+      return res.status(400).json({ error: 'Notes or STAR points required to polish' });
+    }
+
+    if (ai) {
+      const prompt = `You are an elite speech and interview communications coach.
+The user is preparing an answer for this interview question:
+Question: "${question || 'Interview inquiry'}"
+Target Experience Level: "${experienceLevel || '0-2 yrs'}"
+
+Here are the candidate's notes or rough STAR fragments:
+${notesSummary}
+
+Transform these points into a polished, natural-sounding SPOKEN interview response.
+- Must sound like a confident, real professional speaking aloud in an interview room (not reading a dry academic paper).
+- Structure follows STAR (Situation -> Task -> Action -> Result) seamlessly with natural transitions.
+- Length: approximately 120-180 words (around 60-90 seconds spoken).
+- Avoid robotic labels like "My situation was... My task was...". Weave them into natural storytelling.
+
+Return ONLY valid JSON:
+{
+  "polishedAnswer": string,
+  "wordCount": number,
+  "keyHighlight": string (1 sentence explaining the biggest improvement made)
+}`;
+
+      try {
+        const response = await generateContentWithModelFallback(ai, {
+          contents: prompt,
+          config: { responseMimeType: 'application/json' },
+        });
+
+        const parsed = parseJsonSafely(response.text);
+        if (parsed && parsed.polishedAnswer) {
+          return res.json(parsed);
+        }
+      } catch (err: any) {
+        console.warn('Polish answer notice:', err?.message || err);
+      }
+    }
+
+    // Fallback simple assembly
+    const fallbackAnswer = `In my previous role, ${starNotes?.situation || 'we encountered a key challenge'}. My primary objective was to ${starNotes?.task || 'resolve this effectively'}. To tackle this, I ${starNotes?.action || 'analyzed the core factors and implemented a targeted solution'}. As a result, ${starNotes?.result || 'we successfully achieved our goal with noticeable performance gains'}.`;
+    res.json({
+      polishedAnswer: fallbackAnswer,
+      wordCount: fallbackAnswer.split(/\s+/).length,
+      keyHighlight: 'Assembled your STAR points into a cohesive narrative with clear cause-and-effect.'
+    });
+  } catch (error: any) {
+    console.error('Polish answer endpoint error:', error);
+    res.status(500).json({ error: error.message || 'Failed to polish answer' });
+  }
+});
+
 // 6. Practice Sessions storage endpoints
 app.get('/api/sessions', (req: Request, res: Response) => {
   res.json(sessionStore);
